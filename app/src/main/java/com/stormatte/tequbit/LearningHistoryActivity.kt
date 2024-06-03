@@ -43,7 +43,7 @@ import java.util.Date
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LearningHistory(){
+fun LearningHistory(navToScreens : ()-> Unit){
 
     val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
     val date = LocalDate.parse("24-05-2024", formatter)
@@ -69,7 +69,8 @@ fun LearningHistory(){
                 Icon(
                     imageVector = Icons.Sharp.KeyboardArrowLeft,
                     contentDescription = "New Chat Icon",
-                    modifier = Modifier.clickable {  }
+                    modifier = Modifier.clickable {  } .width(35.dp)
+                        .height(35.dp)
                 )
                 Spacer(modifier = Modifier.width(20.dp))
 
@@ -79,21 +80,25 @@ fun LearningHistory(){
                 Icon(
                     imageVector = Icons.Sharp.Settings,
                     contentDescription = "New Chat Icon",
-                    modifier = Modifier.clickable {  }
+                    modifier = Modifier.clickable {  } .width(30.dp)
+                        .height(30.dp)
                 )
 
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
             //TextField Line
             OutlinedTextField(
                 value = "",
                 onValueChange = {},
                 modifier = Modifier
-                    .shadow(4.dp, ambientColor = Color(40000000))
-                    .padding(top = 30.dp, bottom = 50.dp, start = 20.dp, end = 20.dp)
-                    .fillMaxWidth(),
+//                    .shadow(4.dp, ambientColor = Color(40000000))
+                    .padding(top=10.dp)
+                    .width(320.dp),
                 trailingIcon = {
                     Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Icon")
-                }
+                },
+                shape = RoundedCornerShape(26.dp)
             )
             Column(
                 modifier = Modifier.padding(top = 30.dp, bottom = 50.dp, start = 20.dp, end = 20.dp),
@@ -121,7 +126,9 @@ fun LearningHistory(){
                     .height(70.dp)
                     .width(270.dp),
                 shape = RoundedCornerShape(20.dp),
-                onClick = { /*TODO*/ }
+                onClick = {
+                    navToScreens()
+                }
             ) {
                 Text(
                     text = "Start a New Learning Session",

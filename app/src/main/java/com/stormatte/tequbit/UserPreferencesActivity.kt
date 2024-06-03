@@ -51,10 +51,10 @@ import androidx.compose.ui.unit.sp
 
 
 @Composable
-fun UserPreference(navToHomePage :()->Unit) {
+fun UserPreference(navToHomePage: () -> Unit) {
     val context = LocalContext.current
 
-    val preferenceSelected = remember{
+    val preferenceSelected = remember {
         mutableStateListOf<PreferenceSelected>(
             PreferenceSelected(),
             PreferenceSelected(),
@@ -70,8 +70,8 @@ fun UserPreference(navToHomePage :()->Unit) {
     }
 
     val selectedResponseWays = remember {
-            mutableStateListOf<String>()
-        }
+        mutableStateListOf<String>()
+    }
 
     var isChecked by remember {
         mutableStateOf(false)
@@ -92,11 +92,11 @@ fun UserPreference(navToHomePage :()->Unit) {
     )
 
     val respondingData = listOf(
-            ResponseWayInfo("Witty & Fun Sentences", R.drawable.learningnewthings),
-            ResponseWayInfo("Casual and Easy", R.drawable.learningnewthings),
-            ResponseWayInfo("Include examples from games and pop culture", R.drawable.doubts),
-            ResponseWayInfo("Let TeQubit decide based on question", R.drawable.casualsearch),
-        )
+        ResponseWayInfo("Witty & Fun Sentences", R.drawable.learningnewthings),
+        ResponseWayInfo("Casual and Easy", R.drawable.learningnewthings),
+        ResponseWayInfo("Include examples from games and pop culture", R.drawable.doubts),
+        ResponseWayInfo("Let TeQubit decide based on question", R.drawable.casualsearch),
+    )
 
     Column(
         modifier = Modifier
@@ -105,7 +105,9 @@ fun UserPreference(navToHomePage :()->Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            modifier = Modifier.padding(vertical = 20.dp, horizontal = 8.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(vertical = 20.dp, horizontal = 8.dp)
+                .fillMaxWidth(),
             text = "Select you level of knowledge - $knowledgePreference",
             fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -123,10 +125,10 @@ fun UserPreference(navToHomePage :()->Unit) {
                     level = knowledgeLevel.level,
                     onCardSelected = {
                         knowledgePreference = it
-                        if(preferenceSelected[0].selected){
-                            preferenceSelected[0].selected=false
-                        }else{
-                            preferenceSelected[0].selected=true
+                        if (preferenceSelected[0].selected) {
+                            preferenceSelected[0].selected = false
+                        } else {
+                            preferenceSelected[0].selected = true
                             preferenceSelected[0].preferenceType = "Knowledge"
                         }
                     },
@@ -137,7 +139,9 @@ fun UserPreference(navToHomePage :()->Unit) {
         }
 
         Text(
-            modifier = Modifier.padding(vertical = 30.dp, horizontal = 5.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(vertical = 30.dp, horizontal = 5.dp)
+                .fillMaxWidth(),
             text = "Select your primary usage - ${selectedUsages.toList()}",
             fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -153,18 +157,17 @@ fun UserPreference(navToHomePage :()->Unit) {
                 MultipleChoiceCard(
                     usage = usageItem.usage,
                     onCardSelected = {
-                        if(selectedUsages.contains(it)){
+                        if (selectedUsages.contains(it)) {
                             selectedUsages.removeAll(listOf(it))
-                        }
-                        else{
-                        selectedUsages.add(it)
+                        } else {
+                            selectedUsages.add(it)
 
                         }
 
-                        if(preferenceSelected[1].selected){
-                            preferenceSelected[1].selected=false
-                        }else{
-                            preferenceSelected[1].selected=true
+                        if (preferenceSelected[1].selected) {
+                            preferenceSelected[1].selected = false
+                        } else {
+                            preferenceSelected[1].selected = true
                             preferenceSelected[1].preferenceType = "Usage"
                         }
                         println("The items are ${selectedUsages.toList()}")
@@ -192,18 +195,17 @@ fun UserPreference(navToHomePage :()->Unit) {
                 MultipleChoiceCard(
                     usage = resItem.wayToRespond,
                     onCardSelected = {
-                        if(selectedResponseWays.contains(it)){
+                        if (selectedResponseWays.contains(it)) {
                             selectedResponseWays.removeAll(listOf(it))
-                        }
-                        else{
+                        } else {
                             selectedResponseWays.add(it)
                         }
 
-                        if(preferenceSelected[2].selected){
-                            preferenceSelected[2].selected=false
+                        if (preferenceSelected[2].selected) {
+                            preferenceSelected[2].selected = false
                             println("It shouldnt be here lmao")
-                        }else{
-                            preferenceSelected[2].selected=true
+                        } else {
+                            preferenceSelected[2].selected = true
                             preferenceSelected[2].preferenceType = "Response Way"
                         }
                         println("The items are ${selectedResponseWays.toList()}")
@@ -214,25 +216,34 @@ fun UserPreference(navToHomePage :()->Unit) {
                 )
             }
         }
-        
+
         ElevatedButton(
             modifier = Modifier.padding(20.dp),
             onClick = {
-                preferenceSelected.map{
-                    println("Selects = ${it.selected}, ${it.preferenceType},${preferenceSelected.size}")
-                    if(!it.selected){
-                        Toast.makeText(context, "Pls select the preferences from all categories. U must have missed one", Toast.LENGTH_LONG).show()
-                    }else{
-                        navToHomePage()
-                    }
+
+//                preferenceSelected.map{
+//                    println("Selects = ${it.selected}, ${it.preferenceType},${preferenceSelected.size}")
+//                    if(!it.selected){
+//                        Toast.makeText(context, "Pls select the preferences from all categories. U must have missed one", Toast.LENGTH_LONG).show()
+//                    }else{
+//                        navToHomePage()
+//                }
+                if (knowledgePreference.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
+                    navToHomePage()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Pls select the preferences from all categories. U must have missed one or more.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         ) {
             Text(
                 text = "Submit Preferences",
-                color = if(isSystemInDarkTheme()){
+                color = if (isSystemInDarkTheme()) {
                     Color.White
-                }else{
+                } else {
                     Color.Black
                 }
             )
@@ -279,9 +290,9 @@ fun SingleChoiceCard(
                 text = level,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
-                color = if(isSystemInDarkTheme()){
+                color = if (isSystemInDarkTheme()) {
                     Color.White
-                }else{
+                } else {
                     Color.Black
                 },
                 modifier = Modifier.padding(24.dp),
@@ -310,7 +321,10 @@ fun MultipleChoiceCard(
                 },
             )
             .padding(top = 10.dp, end = 8.dp),
-        border = if (isSelectedState) BorderStroke(width = 4.dp, color = Color.Cyan) else BorderStroke(
+        border = if (isSelectedState) BorderStroke(
+            width = 4.dp,
+            color = Color.Cyan
+        ) else BorderStroke(
             width = 1.dp,
             color = Color.Gray
         )
@@ -332,9 +346,9 @@ fun MultipleChoiceCard(
                 text = usage,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
-                color = if(isSystemInDarkTheme()){
+                color = if (isSystemInDarkTheme()) {
                     Color.White
-                }else{
+                } else {
                     Color.Black
                 },
                 modifier = Modifier.padding(24.dp),
@@ -347,4 +361,4 @@ data class KnowledgeLevel(val level: String, val image: Int)
 data class UsageInfo(val usage: String, val image: Int)
 data class ResponseWayInfo(val wayToRespond: String, val image: Int)
 
-data class PreferenceSelected(var preferenceType:String="", var selected:Boolean = false)
+data class PreferenceSelected(var preferenceType: String = "", var selected: Boolean = false)

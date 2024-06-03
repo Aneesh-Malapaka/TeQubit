@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun QubitNavigation(navController: NavHostController){
 
-    NavHost(navController = navController, startDestination = "user_preference") {
+    NavHost(navController = navController, startDestination = "user_preferences") {
         composable("user_preference"){
             UserPreference{
                 navController.navigate("home_screen")
@@ -58,7 +58,9 @@ fun QubitNavigation(navController: NavHostController){
         }
         composable("learning_history"){
 //            navController.navigate("home_screen")
-            LearningHistory()
+            LearningHistory{
+                navController.navigate("new_chat")
+            }
         }
         composable("new_chat"){
             LessonChat()

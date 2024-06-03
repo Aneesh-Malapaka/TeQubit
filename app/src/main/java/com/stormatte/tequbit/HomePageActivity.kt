@@ -8,6 +8,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -96,7 +98,7 @@ fun HomePage(navToNextScreen:(destinationName:String)->Unit){
               Color.Black
             }
           )
-          Spacer(modifier = Modifier.width(20.dp))
+          Spacer(modifier = Modifier.width(10.dp))
           Icon(imageVector = Icons.Sharp.Add, contentDescription = "New Chat Icon")
         }
         Spacer(modifier = Modifier.height(30.dp))
@@ -117,7 +119,7 @@ fun HomePage(navToNextScreen:(destinationName:String)->Unit){
               Color.Black
             }
           )
-          Spacer(modifier = Modifier.width(45.dp))
+          Spacer(modifier = Modifier.width(55.dp))
           Icon(
             imageVector = Icons.Sharp.Refresh,
             contentDescription = "Learnings History Icon",
@@ -128,17 +130,16 @@ fun HomePage(navToNextScreen:(destinationName:String)->Unit){
       
       HorizontalPager(
         state = pagerState,
+        contentPadding = PaddingValues(10.dp),
+        pageSize = PageSize.Fill,
         modifier = Modifier
           .fillMaxHeight(0.5f)
-          .onSizeChanged { (width, height) ->
-            pagerSize[0] = width
-            pagerSize[1] = height
-          }){
+         ){
         page ->
           Image(
             modifier = Modifier
-              .width(1000.dp)
-              .height(726.dp)
+//              .width(1000.dp)
+//              .height(726.dp)
             ,
             painter = painterResource(id = caro_images[page] ),
             contentScale = ContentScale.Inside,

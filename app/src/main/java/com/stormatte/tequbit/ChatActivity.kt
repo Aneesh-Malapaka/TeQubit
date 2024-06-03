@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.sharp.KeyboardArrowLeft
 import androidx.compose.material.icons.sharp.Settings
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.sp
+import com.stormatte.tequbit.ui.theme.DarkBackground
 
 @Composable
 // use it for viewModel, (stackoverflow - https://stackoverflow.com/questions/72541475/how-to-add-more-items-to-a-static-list-in-jetpack-compose)
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.sp
 //}
 fun LessonChat() {
     val user = "Matte"
+    val darkTheme = isSystemInDarkTheme()
     val demoMessages = remember {
         mutableStateListOf(
 
@@ -156,7 +159,7 @@ fun LessonChat() {
         ) {
             Row(
                 modifier = Modifier
-                    .height(20.dp)
+                    .height(30.dp)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceAround,
@@ -164,7 +167,12 @@ fun LessonChat() {
                 Icon(
                     imageVector = Icons.Sharp.KeyboardArrowLeft,
                     contentDescription = "Back To Home",
-                    modifier = Modifier.clickable { }
+                    modifier = Modifier
+                        .clickable {
+
+                        }
+                        .width(35.dp)
+                        .height(35.dp)
                 )
                 Spacer(modifier = Modifier.width(20.dp))
 
@@ -174,7 +182,10 @@ fun LessonChat() {
                 Icon(
                     imageVector = Icons.Sharp.Settings,
                     contentDescription = "New Chat Icon",
-                    modifier = Modifier.clickable { }
+                    modifier = Modifier
+                        .clickable { }
+                        .width(35.dp)
+                        .height(35.dp)
                 )
 
             }
@@ -200,10 +211,22 @@ fun LessonChat() {
 //                    .shadow(2.dp, ambientColor = Color(40000000))
                     .padding(top = 5.dp, bottom = 3.dp)
                     .width(320.dp)
-                    .height(70.dp),
+                    .height(50.dp),
                 trailingIcon = {
-                    Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Icon")
-                }
+                    Icon(
+                        imageVector = Icons.Outlined.KeyboardArrowRight,
+                        contentDescription = "Send Chat Icon",
+                        modifier = Modifier
+                            .conditional(darkTheme,
+                                ifTrue = {background(Color(0x51D3CDCD), RoundedCornerShape(30.dp))},
+                                ifFalse = {background(Color(0xE1000000), RoundedCornerShape(30.dp))}
+                            )
+                            .width(35.dp)
+                            .height(35.dp),
+                        tint = Color.White
+                    )
+                },
+                shape = RoundedCornerShape(26.dp)
             )
         }
     }
@@ -216,7 +239,6 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
 
     val color1 = randomColor()
     val color2 = randomColor()
-
 
     Row(
         modifier = Modifier
