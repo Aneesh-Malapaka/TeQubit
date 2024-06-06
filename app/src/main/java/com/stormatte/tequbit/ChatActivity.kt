@@ -1,7 +1,7 @@
 package com.stormatte.tequbit
 
+import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -18,31 +18,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.sharp.KeyboardArrowLeft
 import androidx.compose.material.icons.sharp.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.sp
-import com.stormatte.tequbit.ui.theme.DarkBackground
+import kotlinx.coroutines.coroutineScope
 
 @Composable
 // use it for viewModel, (stackoverflow - https://stackoverflow.com/questions/72541475/how-to-add-more-items-to-a-static-list-in-jetpack-compose)
@@ -56,99 +51,22 @@ import com.stormatte.tequbit.ui.theme.DarkBackground
 //    _noteList.value = newList
 //}
 fun LessonChat() {
-    val user = "Matte"
     val darkTheme = isSystemInDarkTheme()
-    val demoMessages = remember {
-        mutableStateListOf(
 
-            MessageFormat("Input", SenderType.USER, "Hello, TeQubit!"),
-            MessageFormat("Response", SenderType.AI, "Hello, $user"),
-            MessageFormat(
-                "Doubt",
-                SenderType.USER,
-                "Can you teach me about the basics of different mutable state- suffixes available in android studio? Like mutableStateListOf, mutableListOf and the MutableStateFlow"
-            ),
-            MessageFormat(
-                "Response",
-                SenderType.AI,
-                "Sure, let me explain all these mutable state suffixes in detail. Before we start, let's think of these mutable states as **magical containers** in your Android app that hold data.  \n" +
-                        "\n" +
-                        "**Mutable State Suffixes Explained**\n" +
-                        "\n" +
-                        "1. **`mutableListOf<T>()`**: Think of this as a basic, **flexible box** you can use to store various things (data of type `T`) in a specific order. You can easily add, remove, and change items in this box. \n" +
-                        "\n" +
-                        "   ```kotlin\n" +
-                        "   val myItems = mutableListOf<String>(\"apple\", \"banana\", \"cherry\") // Our box\n" +
-                        "   myItems.add(\"grape\") // Adding more\n" +
-                        "   myItems[1] = \"mango\" // Changing an item\n" +
-                        "   myItems.removeAt(0) // Removing an item\n" +
-                        "   ```\n" +
-                        "\n" +
-                        "2. **`mutableStateListOf<T>()`**: This is like a special **transparent box** that allows you to keep track of changes within it.  It's perfect for creating user interfaces where changes should automatically update the displayed information.  **Think of a shopping cart, where adding items to the cart updates the total automatically.**\n" +
-                        "\n" +
-                        "   ```kotlin\n" +
-                        "   import androidx.compose.runtime.mutableStateListOf\n" +
-                        "   import androidx.compose.runtime.remember\n" +
-                        "\n" +
-                        "   @Composable\n" +
-                        "   fun MyComposable() {\n" +
-                        "       val items = remember { mutableStateListOf(\"apple\", \"banana\", \"cherry\") } // Our transparent box\n" +
-                        "\n" +
-                        "       // Display the items, which will automatically update if items change\n" +
-                        "       Column {\n" +
-                        "           items.forEach { item -> \n" +
-                        "               Text(text = item) \n" +
-                        "           }\n" +
-                        "       }\n" +
-                        "\n" +
-                        "       // Adding an item will update the display\n" +
-                        "       Button(onClick = { items.add(\"grape\") }) {\n" +
-                        "           Text(\"Add grape\")\n" +
-                        "       }\n" +
-                        "   }\n" +
-                        "   ```\n" +
-                        "\n" +
-                        "3. **`MutableStateFlow<T>()`**: This is like a **magical stream** that delivers data to your app. Whenever something changes in this stream, it automatically notifies everyone listening. **Imagine a news channel that continuously broadcasts updates – that's `MutableStateFlow`!**\n" +
-                        "\n" +
-                        "   ```kotlin\n" +
-                        "   import kotlinx.coroutines.flow.MutableStateFlow\n" +
-                        "   import kotlinx.coroutines.flow.collect\n" +
-                        "\n" +
-                        "   val counter = MutableStateFlow(0) // Our magical stream starts at 0\n" +
-                        "\n" +
-                        "   // Listening to updates\n" +
-                        "   launch {\n" +
-                        "       counter.collect { value ->\n" +
-                        "           println(\"Counter updated to: value\")\n" +
-                        "       }\n" +
-                        "   }\n" +
-                        "\n" +
-                        "   // Changing the value of the stream\n" +
-                        "   counter.value = 5\n" +
-                        "   ```\n" +
-                        "\n" +
-                        "**Key Takeaway**\n" +
-                        "\n" +
-                        "* **`mutableListOf`:** Simple, mutable list for storing data.\n" +
-                        "* **`mutableStateListOf`:**  A mutable list designed specifically for reactive UI updates in Compose.\n" +
-                        "* **`MutableStateFlow`:** A stream of data that allows you to efficiently manage and react to data changes.\n" +
-                        "\n" +
-                        "**Which one to use?**\n" +
-                        "\n" +
-                        "* **`mutableListOf`:** When you need a basic, mutable list without the need for reactive updates.\n" +
-                        "* **`mutableStateListOf`:**  When working with Jetpack Compose and need a list that automatically updates UI elements when changes occur.\n" +
-                        "* **`MutableStateFlow`:**  When you have data that needs to be shared across different parts of your app and requires efficient notification of changes.\n" +
-                        "\n" +
-                        "Let me know if you have any further questions! \uD83D\uDE0A \n"
-            ),
-            MessageFormat(
-                "Lesson",
-                SenderType.USER,
-                "[LESSON] Okay, Can you explain it in detail?"
-            ),
-        )
+    val geminiApi = remember { LessonChatWrapper("testing") }
+
+    LaunchedEffect(geminiApi.messages.size){
+        coroutineScope {
+            try{
+                geminiApi.askGemini()
+            }
+            catch (it: Exception) {
+                // TODO: Sometimes api just errors out. Maybe add a retry button? For now I'm gonna leave it, as it only occurs at the start of the app
+                Log.e(BuildConfig.APPLICATION_ID, it.stackTraceToString())
+            }
+
+        }
     }
-
     Box(
 
     ) {
@@ -195,35 +113,65 @@ fun LessonChat() {
                     .fillMaxHeight(0.8f),
                 contentPadding = PaddingValues(vertical = 10.dp)
             ) {
-                items(demoMessages.size) { message ->
-                    MessageDisplay(
-                        index = message,
-                        senderType = demoMessages[message].sender,
-                        message = demoMessages[message].message
-                    )
+                items(geminiApi.messages.size) { message ->
+
+                    if(geminiApi.messages[message].type == "Input")
+                        MessageDisplay(
+                            index = message,
+                            senderType = geminiApi.messages[message].sender,
+                            message = geminiApi.messages[message].message
+                        )
                 }
             }
+            var textfield  = remember{mutableStateOf("")}
             //TextField Line
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = textfield.value,
+                onValueChange = {
+                    textfield.value = it
+                },
                 modifier = Modifier
 //                    .shadow(2.dp, ambientColor = Color(40000000))
                     .padding(top = 5.dp, bottom = 3.dp)
                     .width(320.dp)
-                    .height(50.dp),
+                    .height(50.dp)
+                    .clickable {
+                        geminiApi.messages.add(MessageFormat("Input", SenderType.USER, textfield.value))
+                        textfield.value = ""
+
+                    },
                 trailingIcon = {
                     Icon(
                         imageVector = Icons.Outlined.KeyboardArrowRight,
                         contentDescription = "Send Chat Icon",
                         modifier = Modifier
                             .conditional(darkTheme,
-                                ifTrue = {background(Color(0x51D3CDCD), RoundedCornerShape(30.dp))},
-                                ifFalse = {background(Color(0xE1000000), RoundedCornerShape(30.dp))}
+                                ifTrue = {
+                                    background(
+                                        Color(0x51D3CDCD),
+                                        RoundedCornerShape(30.dp)
+                                    )
+                                },
+                                ifFalse = {
+                                    background(
+                                        Color(0xE1000000),
+                                        RoundedCornerShape(30.dp)
+                                    )
+                                }
                             )
                             .width(35.dp)
-                            .height(35.dp),
-                        tint = Color.White
+                            .height(35.dp)
+                            .clickable {
+                                geminiApi.messages.add(
+                                    MessageFormat(
+                                        "Input",
+                                        SenderType.USER,
+                                        textfield.value
+                                    )
+                                )
+                                textfield.value = ""
+                            },
+                        tint = Color.White,
                     )
                 },
                 shape = RoundedCornerShape(26.dp)

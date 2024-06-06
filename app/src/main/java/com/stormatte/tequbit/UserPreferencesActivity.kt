@@ -48,7 +48,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 
+
+val USER="Matt"
 
 @Composable
 fun UserPreference(navToHomePage: () -> Unit) {
@@ -221,14 +225,13 @@ fun UserPreference(navToHomePage: () -> Unit) {
             modifier = Modifier.padding(20.dp),
             onClick = {
 
-//                preferenceSelected.map{
-//                    println("Selects = ${it.selected}, ${it.preferenceType},${preferenceSelected.size}")
-//                    if(!it.selected){
-//                        Toast.makeText(context, "Pls select the preferences from all categories. U must have missed one", Toast.LENGTH_LONG).show()
-//                    }else{
-//                        navToHomePage()
-//                }
                 if (knowledgePreference.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
+                    val userPreferences = UserPreferences(
+                        knowledge = knowledgePreference,
+                        usage = selectedUsages.toList(),
+                        responseWay = selectedResponseWays.toList()
+                    )
+                    Firebase.database.getReference("users/$USER").setValue(userPreferences)
                     navToHomePage()
                 } else {
                     Toast.makeText(
@@ -357,6 +360,12 @@ fun MultipleChoiceCard(
     }
 }
 
+data class UserPreferences(
+    val knowledge: String,
+    val usage: List<String>,
+    val responseWay: List<String>,
+
+)
 data class KnowledgeLevel(val level: String, val image: Int)
 data class UsageInfo(val usage: String, val image: Int)
 data class ResponseWayInfo(val wayToRespond: String, val image: Int)

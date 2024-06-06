@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun QubitNavigation(navController: NavHostController){
 
-    NavHost(navController = navController, startDestination = "user_preferences") {
+    NavHost(navController = navController, startDestination = "user_preference") {
         composable("user_preference"){
             UserPreference{
                 navController.navigate("home_screen")
