@@ -4,42 +4,28 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.ScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -48,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 
@@ -57,30 +44,21 @@ val USER="Matt"
 @Composable
 fun UserPreference(navToHomePage: () -> Unit) {
     val context = LocalContext.current
+    val viewModel :QubitViewModel = viewModel()
 
-    val preferenceSelected = remember {
-        mutableStateListOf<PreferenceSelected>(
-            PreferenceSelected(),
-            PreferenceSelected(),
-            PreferenceSelected()
-        )
-    }
-    var knowledgePreference by remember {
-        mutableStateOf("")
-    }
+    val preferenceSelected = viewModel.preferenceSelected
 
-    val selectedUsages = remember {
-        mutableStateListOf<String>()
-    }
+    val knowledgePreference = viewModel.knowledgePreference
 
-    val selectedResponseWays = remember {
-        mutableStateListOf<String>()
-    }
+    val selectedUsages = viewModel.selectedUsages
+
+    val selectedResponseWays = viewModel.selectedResponseWays
 
     var isChecked by remember {
         mutableStateOf(false)
     }
     val scrollState = rememberScrollState()
+
     val knowledgeData = listOf(
         KnowledgeLevel("Student", R.drawable.student),
         KnowledgeLevel("Entry Level", R.drawable.entry_level),
@@ -112,7 +90,7 @@ fun UserPreference(navToHomePage: () -> Unit) {
             modifier = Modifier
                 .padding(vertical = 20.dp, horizontal = 8.dp)
                 .fillMaxWidth(),
-            text = "Select you level of knowledge - $knowledgePreference",
+            text = "Select you level of knowledge - ${knowledgePreference.value}",
             fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Left
@@ -128,7 +106,7 @@ fun UserPreference(navToHomePage: () -> Unit) {
                 SingleChoiceCard(
                     level = knowledgeLevel.level,
                     onCardSelected = {
-                        knowledgePreference = it
+                        viewModel.setKnowledgePreference(it)
                         if (preferenceSelected[0].selected) {
                             preferenceSelected[0].selected = false
                         } else {
@@ -137,7 +115,7 @@ fun UserPreference(navToHomePage: () -> Unit) {
                         }
                     },
                     imageSrc = knowledgeLevel.image,
-                    isSelected = knowledgeLevel.level == knowledgePreference
+                    isSelected = knowledgeLevel.level == knowledgePreference.value
                 )
             }
         }
@@ -165,7 +143,6 @@ fun UserPreference(navToHomePage: () -> Unit) {
                             selectedUsages.removeAll(listOf(it))
                         } else {
                             selectedUsages.add(it)
-
                         }
 
                         if (preferenceSelected[1].selected) {
@@ -207,7 +184,7 @@ fun UserPreference(navToHomePage: () -> Unit) {
 
                         if (preferenceSelected[2].selected) {
                             preferenceSelected[2].selected = false
-                            println("It shouldnt be here lmao")
+                            println("It shouldn't be here lmao")
                         } else {
                             preferenceSelected[2].selected = true
                             preferenceSelected[2].preferenceType = "Response Way"
@@ -225,9 +202,9 @@ fun UserPreference(navToHomePage: () -> Unit) {
             modifier = Modifier.padding(20.dp),
             onClick = {
 
-                if (knowledgePreference.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
+                if (knowledgePreference.value.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
                     val userPreferences = UserPreferences(
-                        knowledge = knowledgePreference,
+                        knowledge = knowledgePreference.value,
                         usage = selectedUsages.toList(),
                         responseWay = selectedResponseWays.toList()
                     )

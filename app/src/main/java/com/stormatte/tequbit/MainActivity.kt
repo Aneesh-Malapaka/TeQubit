@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -25,6 +26,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
+            val viewModel:QubitViewModel = viewModel()
+
             TeQubitTheme {
 
                 Surface(
@@ -41,7 +44,7 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun QubitNavigation(navController: NavHostController){
-
+    val chatViewModel :LessonChatWrapper = viewModel()
     NavHost(navController = navController, startDestination = "user_preference") {
         composable("user_preference"){
             UserPreference{
@@ -49,11 +52,16 @@ fun QubitNavigation(navController: NavHostController){
             }
         }
         composable("home_screen"){
-            HomePage{
-                if(it=="history")
-                    navController.navigate("learning_history")
-                else
-                    navController.navigate("new_chat")
+            println("The backstack is ${it.arguments.toString()}")
+            HomePage { destination, chatID ->
+                run {
+                    if (destination == "history") {
+                        navController.navigate("learning_history")
+                    }else{
+                        navController.currentBackStackEntry?.savedStateHandle?.set("ChatID",chatID)
+                        navController.navigate("new_chat")
+                    }
+                }
             }
         }
         composable("learning_history"){
@@ -63,7 +71,9 @@ fun QubitNavigation(navController: NavHostController){
             }
         }
         composable("new_chat"){
-            LessonChat()
+            val chatIdToSend = navController.previousBackStackEntry?.savedStateHandle?.get<String>("ChatID")?:"failedID"
+            println(chatIdToSend)
+            LessonChat(chatViewModel,chatIdToSend)
         }
 
     }

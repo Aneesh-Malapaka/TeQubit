@@ -202,18 +202,6 @@ fun LearningHistoryCard(index:Int,name:String,type:String,date:LocalDate){
 fun IconFunction(){
     Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Icon")
 }
-//fun colorString():String{
-//    var src = "0123456789abcdef0123456789abcdef0123456789abcdef"
-//
-//    var finalString ="0x"
-//
-//    for(i in 1..3){
-//        finalString+=src[ (0..src.length).random()]
-//        finalString+=src[ (0..src.length).random()]
-//    }
-//    return finalString
-//}
-
 fun randomColor(): Color {
     val red = (0..255).random()
     val green = (0..255).random()

@@ -2,6 +2,7 @@ package com.stormatte.tequbit
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
@@ -25,7 +27,9 @@ import androidx.compose.material.icons.sharp.KeyboardArrowLeft
 import androidx.compose.material.icons.sharp.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -37,9 +41,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stormatte.tequbit.ui.theme.DarkIconsText
+import com.stormatte.tequbit.ui.theme.LightIconsText
 import kotlinx.coroutines.coroutineScope
 
-@Composable
 // use it for viewModel, (stackoverflow - https://stackoverflow.com/questions/72541475/how-to-add-more-items-to-a-static-list-in-jetpack-compose)
 //val _noteList = remember { MutableStateFlow(listOf<String>()) }
 //val noteList by remember { _noteList }.collectAsState()
@@ -50,26 +56,31 @@ import kotlinx.coroutines.coroutineScope
 //    newList.add(yourItem)
 //    _noteList.value = newList
 //}
-fun LessonChat() {
+@Composable
+fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String) {
     val darkTheme = isSystemInDarkTheme()
+    println("It came here tho")
+    println("It came here tho too")
+    println("The chat id received is $chatID")
+    LaunchedEffect(chatID) {
+        chatViewModel.setChatID(chatID)
+        chatViewModel.initializeChat()
+    }
 
-    val geminiApi = remember { LessonChatWrapper("testing") }
-
-    LaunchedEffect(geminiApi.messages.size){
+    println("It came here tho and here")
+//    val geminiApi = chatViewModel.messages
+    LaunchedEffect(chatViewModel.messages.size,chatID){
         coroutineScope {
             try{
-                geminiApi.askGemini()
+                chatViewModel.askGemini()
             }
             catch (it: Exception) {
                 // TODO: Sometimes api just errors out. Maybe add a retry button? For now I'm gonna leave it, as it only occurs at the start of the app
                 Log.e(BuildConfig.APPLICATION_ID, it.stackTraceToString())
             }
-
         }
     }
-    Box(
-
-    ) {
+    Box {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.SpaceEvenly,
@@ -99,7 +110,7 @@ fun LessonChat() {
 
                 Icon(
                     imageVector = Icons.Sharp.Settings,
-                    contentDescription = "New Chat Icon",
+                    contentDescription = "Settings Icon",
                     modifier = Modifier
                         .clickable { }
                         .width(35.dp)
@@ -111,22 +122,27 @@ fun LessonChat() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.8f),
-                contentPadding = PaddingValues(vertical = 10.dp)
+                contentPadding = PaddingValues(vertical = 10.dp),
+                state = LazyListState(firstVisibleItemIndex = chatViewModel.messages.size)
             ) {
-                items(geminiApi.messages.size) { message ->
-
-                    if(geminiApi.messages[message].type == "Input")
+                items(chatViewModel.messages.size) { message ->
+                    if(chatViewModel.messages[message].type == "Input")
                         MessageDisplay(
                             index = message,
-                            senderType = geminiApi.messages[message].sender,
-                            message = geminiApi.messages[message].message
+                            senderType = chatViewModel.messages[message].sender,
+                            message = chatViewModel.messages[message].message
                         )
                 }
             }
-            var textfield  = remember{mutableStateOf("")}
+            val textfield  = chatViewModel.textFieldVal
             //TextField Line
             OutlinedTextField(
                 value = textfield.value,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = if(darkTheme) DarkIconsText else LightIconsText
+                ),
+                maxLines = 4,
+                singleLine = false,
                 onValueChange = {
                     textfield.value = it
                 },
@@ -134,11 +150,16 @@ fun LessonChat() {
 //                    .shadow(2.dp, ambientColor = Color(40000000))
                     .padding(top = 5.dp, bottom = 3.dp)
                     .width(320.dp)
-                    .height(50.dp)
+//                    .height(50.dp)
                     .clickable {
-                        geminiApi.messages.add(MessageFormat("Input", SenderType.USER, textfield.value))
+                        chatViewModel.messages.add(
+                            MessageFormat(
+                                "Input",
+                                SenderType.USER,
+                                textfield.value
+                            )
+                        )
                         textfield.value = ""
-
                     },
                 trailingIcon = {
                     Icon(
@@ -162,7 +183,7 @@ fun LessonChat() {
                             .width(35.dp)
                             .height(35.dp)
                             .clickable {
-                                geminiApi.messages.add(
+                                chatViewModel.messages.add(
                                     MessageFormat(
                                         "Input",
                                         SenderType.USER,
@@ -185,8 +206,10 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
 
     val applyMsgBackground: Boolean = senderType == SenderType.AI
 
-    val color1 = randomColor()
-    val color2 = randomColor()
+    val color1 = Color(0xD296C218)
+    val color2 = Color(0xD218C21B)
+    val color3 = Color(0xD218C2C2)
+    val color4 = Color(0xD21851C2)
 
     Row(
         modifier = Modifier
@@ -205,9 +228,6 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
             .padding(10.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = if (applyMsgBackground) Arrangement.Start else Arrangement.End
-//        reverseLayout = senderType != SenderType.AI,
-
-//        horizontalArrangement = Arr
     ) {
 
         if (applyMsgBackground) {
@@ -234,43 +254,43 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
                 },
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.width(10.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(5.dp)
-            ) {
+            Spacer(modifier = Modifier.width(0.dp))
+
                 Text(
                     text = message,
                     modifier = Modifier
                         .width(250.dp)
 //                        .wrapContentWidth()
-                        .padding(start = 20.dp),
+                        .padding(start = 20.dp, top = 6.dp),
                     fontSize = 17.sp,
                     color = if (isSystemInDarkTheme()) {
                         Color.White
                     } else {
                         Color.Black
                     },
-                    textAlign = TextAlign.Justify
+                    textAlign = TextAlign.Justify,
+                    lineHeight = 30.sp
                 )
-            }
+
         } else {
             Row(
-                modifier = Modifier
+                modifier = Modifier.padding(top=8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = message,
                     modifier = Modifier
                         .width(250.dp)
-                        .wrapContentWidth()
-                        .padding(start = 20.dp),
+                        .wrapContentWidth(Alignment.End)
+                        .padding(start = 30.dp),
                     fontSize = 17.sp,
                     color = if (isSystemInDarkTheme()) {
                         Color.White
                     } else {
                         Color.Black
                     },
-                    textAlign = TextAlign.Justify
+                    textAlign = TextAlign.Justify,
+                    lineHeight = 30.sp,
                 )
             }
             Spacer(modifier = Modifier.width(10.dp))
@@ -280,8 +300,8 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
                     .background(
                         Brush.linearGradient(
                             listOf(
-                                color1,
-                                color2
+                                color3,
+                                color4
                             )
                         ),
                         shape = RoundedCornerShape(50.dp)
@@ -299,6 +319,7 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
             )
         }
     }
+    Spacer(modifier =Modifier.height(15.dp))
 }
 
 data class MessageFormat(val type: String, val sender: Enum<SenderType>, val message: String)

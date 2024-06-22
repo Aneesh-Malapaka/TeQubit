@@ -47,11 +47,17 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stormatte.tequbit.ui.theme.DarkIconsText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomePage(navToNextScreen:(destinationName:String)->Unit){
+fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit){
+  val model :QubitViewModel = viewModel()
   val caro_images = listOf(R.drawable.carousel_slide_1,R.drawable.entry_level,R.drawable.learningnewthings)
   val pagerState = rememberPagerState(pageCount= { caro_images.size })
   val pagerSize = remember {
@@ -87,7 +93,12 @@ fun HomePage(navToNextScreen:(destinationName:String)->Unit){
             .width(270.dp),
           shape = RoundedCornerShape(20.dp),
           onClick = {
-              navToNextScreen("new_chat")
+            model.viewModelScope.launch {
+              val chatID = model.generateChatID()
+              withContext(Dispatchers.Main){
+                navToNextScreen("new_chat",chatID)
+              }
+            }
           }
         ) {
           Text(
@@ -108,7 +119,7 @@ fun HomePage(navToNextScreen:(destinationName:String)->Unit){
             .width(270.dp),
           shape = RoundedCornerShape(20.dp),
           onClick = {
-            navToNextScreen("history")
+            navToNextScreen("history","")
           }
         ) {
           Text(
