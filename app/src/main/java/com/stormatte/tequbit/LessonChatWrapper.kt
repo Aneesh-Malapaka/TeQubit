@@ -70,7 +70,7 @@ val META_QUERY = """
             - <[QUIZ]>
     - <[LESSON]> query, where you carefully break down the concept asked by a student into four different parts
         - Your lesson is defined by a single textual parameter, which is the question asked by a user
-        - You then respond back to admin with <[LESSON: {"lesson_title": {lesson_title}]>
+        - You then respond back to admin with <[LESSON:<|>LESSON_TITLE: {lesson_title}]>
         - Following that, you display your response,  structured with following main headings
             - <[INTRODUCTION:<|>INTRODUCTION_TITLE: {introduction_title}<|>INTRODUCTION_BODY: {introduction_body}]> Which marks the introduction for a particular lesson
             - One or more of explanations (or) mathematical and programmatic implementations in the format: <[DESCRIPTION:<|>DESCRIPTION_TITLE: {description_title}<|>DESCRIPTION_BODY: {description_body}}]> 
@@ -81,7 +81,7 @@ val META_QUERY = """
     Note:
     - You should not respond with any of meta query responses, unless you are specifically asked with the respective meta query. 
     - All responses should follow given format, as they need to be parsed further by frontend
-    - All titles should be max five words long
+    - All titles should be max five words long, should be appropriate to whole chat, rather than single response
 """.trimIndent()
 fun get_prompt(preferences: UserPreferences): String{
     val knowledgePrompt = PROMPTS_KNOWLEDGE[preferences.knowledge]
