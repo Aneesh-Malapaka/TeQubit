@@ -2,7 +2,6 @@ package com.stormatte.tequbit
 
 import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -19,21 +18,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.sharp.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.sharp.KeyboardArrowLeft
 import androidx.compose.material.icons.sharp.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -41,10 +37,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stormatte.tequbit.ui.theme.DarkIconsText
 import com.stormatte.tequbit.ui.theme.LightIconsText
 import kotlinx.coroutines.coroutineScope
+import org.json.JSONObject
 
 // use it for viewModel, (stackoverflow - https://stackoverflow.com/questions/72541475/how-to-add-more-items-to-a-static-list-in-jetpack-compose)
 //val _noteList = remember { MutableStateFlow(listOf<String>()) }
@@ -57,27 +53,24 @@ import kotlinx.coroutines.coroutineScope
 //    _noteList.value = newList
 //}
 @Composable
-fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String) {
+fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String, navBack: () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
-    println("It came here tho")
-    println("It came here tho too")
     println("The chat id received is $chatID")
     LaunchedEffect(chatID) {
         chatViewModel.setChatID(chatID)
         chatViewModel.initializeChat()
     }
-
-    println("It came here tho and here")
-//    val geminiApi = chatViewModel.messages
     LaunchedEffect(chatViewModel.messages.size,chatID){
-        coroutineScope {
-            try{
-                chatViewModel.askGemini()
+        println("Asking Gemini")
+        try{
+            chatViewModel.askGemini()
+            if(chatViewModel.messages.size != 0 && chatViewModel.messages.last().parsedMessage != null && chatViewModel.messages.last().parsedMessage!!["meta"] == "RESPONSE"){
+                chatViewModel.setChatTitle(chatViewModel.messages.last().parsedMessage!!["RESPONSE_TITLE"]!!)
             }
-            catch (it: Exception) {
-                // TODO: Sometimes api just errors out. Maybe add a retry button? For now I'm gonna leave it, as it only occurs at the start of the app
-                Log.e(BuildConfig.APPLICATION_ID, it.stackTraceToString())
-            }
+        }
+        catch (it: Exception) {
+            // TODO: Sometimes api just errors out. Maybe add a retry button? For now I'm gonna leave it, as it only occurs at the start of the app
+            Log.e(BuildConfig.APPLICATION_ID, it.stackTraceToString())
         }
     }
     Box {
@@ -94,18 +87,18 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String) {
                 horizontalArrangement = Arrangement.SpaceAround,
             ) {
                 Icon(
-                    imageVector = Icons.Sharp.KeyboardArrowLeft,
+                    imageVector = Icons.AutoMirrored.Sharp.KeyboardArrowLeft,
                     contentDescription = "Back To Home",
                     modifier = Modifier
                         .clickable {
-
+                            navBack()
                         }
                         .width(35.dp)
                         .height(35.dp)
                 )
                 Spacer(modifier = Modifier.width(20.dp))
 
-                Text(text = "New Chat")
+                Text(text = chatViewModel.chatTitle.value)
                 Spacer(modifier = Modifier.width(20.dp))
 
                 Icon(
@@ -118,33 +111,50 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String) {
                 )
 
             }
+            val listState = rememberLazyListState()
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.8f),
                 contentPadding = PaddingValues(vertical = 10.dp),
-                state = LazyListState(firstVisibleItemIndex = chatViewModel.messages.size)
+                state = listState
             ) {
                 items(chatViewModel.messages.size) { message ->
-                    if(chatViewModel.messages[message].type == "Input")
-                        MessageDisplay(
-                            index = message,
-                            senderType = chatViewModel.messages[message].sender,
-                            message = chatViewModel.messages[message].message
-                        )
+                    if(chatViewModel.messages[message].type == "Input") {
+                        if (chatViewModel.messages[message].sender == SenderType.AI) {
+                            MessageDisplay(
+                                index = message,
+                                senderType = chatViewModel.messages[message].sender,
+                                parsedMessage = chatViewModel.messages[message].parsedMessage!!,
+                            )
+                        } else {
+                            MessageDisplay(
+                                index = message,
+                                senderType = chatViewModel.messages[message].sender,
+                                parsedMessage = chatViewModel.messages[message].message,
+                            )
+
+                        }
+                    }
+                    LaunchedEffect(message){
+                        if(message == (chatViewModel.messages.size-1)){
+                            listState.animateScrollToItem(message)
+                        }
+                    }
+
                 }
             }
-            val textfield  = chatViewModel.textFieldVal
+            val textField  = chatViewModel.textFieldVal
             //TextField Line
             OutlinedTextField(
-                value = textfield.value,
+                value = textField.value,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = if(darkTheme) DarkIconsText else LightIconsText
                 ),
                 maxLines = 4,
                 singleLine = false,
                 onValueChange = {
-                    textfield.value = it
+                    textField.value = it
                 },
                 modifier = Modifier
 //                    .shadow(2.dp, ambientColor = Color(40000000))
@@ -156,14 +166,15 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String) {
                             MessageFormat(
                                 "Input",
                                 SenderType.USER,
-                                textfield.value
+                                textField.value,
+                                null
                             )
                         )
-                        textfield.value = ""
+                        textField.value = ""
                     },
                 trailingIcon = {
                     Icon(
-                        imageVector = Icons.Outlined.KeyboardArrowRight,
+                        imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                         contentDescription = "Send Chat Icon",
                         modifier = Modifier
                             .conditional(darkTheme,
@@ -187,10 +198,11 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String) {
                                     MessageFormat(
                                         "Input",
                                         SenderType.USER,
-                                        textfield.value
+                                        textField.value,
+                                        null
                                     )
                                 )
-                                textfield.value = ""
+                                textField.value = ""
                             },
                         tint = Color.White,
                     )
@@ -200,11 +212,22 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String) {
         }
     }
 }
+@Composable
+fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: Map<String, String>){
+    val responseMap = parsedMessage
+    var chat = ""
+    if(responseMap["meta"] == "RESPONSE"){
+        chat = responseMap["RESPONSE_BODY"]!!
+    }
+    return MessageDisplay(index, senderType, chat)
+}
 
 @Composable
-fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
+fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: String) {
 
-    val applyMsgBackground: Boolean = senderType == SenderType.AI
+    val isSenderAI: Boolean = senderType == SenderType.AI
+    var chat = parsedMessage
+
 
     val color1 = Color(0xD296C218)
     val color2 = Color(0xD218C21B)
@@ -216,7 +239,7 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
             .padding(10.dp)
             .fillMaxWidth()
             .conditional(
-                applyMsgBackground,
+                isSenderAI,
                 ifTrue = { background(Color(0x40000000), shape = RoundedCornerShape(20.dp)) },
                 ifFalse = {
                     background(
@@ -227,10 +250,10 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
             )
             .padding(10.dp),
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = if (applyMsgBackground) Arrangement.Start else Arrangement.End
+        horizontalArrangement = if (isSenderAI) Arrangement.Start else Arrangement.End
     ) {
 
-        if (applyMsgBackground) {
+        if (isSenderAI) {
             Text(
                 text = "AI",
                 modifier = Modifier
@@ -257,7 +280,7 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
             Spacer(modifier = Modifier.width(0.dp))
 
                 Text(
-                    text = message,
+                    text = chat,
                     modifier = Modifier
                         .width(250.dp)
 //                        .wrapContentWidth()
@@ -278,7 +301,7 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = message,
+                    text = chat,
                     modifier = Modifier
                         .width(250.dp)
                         .wrapContentWidth(Alignment.End)
@@ -322,7 +345,7 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, message: String) {
     Spacer(modifier =Modifier.height(15.dp))
 }
 
-data class MessageFormat(val type: String, val sender: Enum<SenderType>, val message: String)
+data class MessageFormat(val type: String, val sender: Enum<SenderType>, var message: String, var parsedMessage: Map<String, String>?)
 
 enum class SenderType {
     AI,

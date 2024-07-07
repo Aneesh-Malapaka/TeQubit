@@ -23,7 +23,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Add
-import androidx.compose.material.icons.sharp.KeyboardArrowLeft
 import androidx.compose.material.icons.sharp.Refresh
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
@@ -93,12 +92,8 @@ fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit){
             .width(270.dp),
           shape = RoundedCornerShape(20.dp),
           onClick = {
-            model.viewModelScope.launch {
-              val chatID = model.generateChatID()
-              withContext(Dispatchers.Main){
-                navToNextScreen("new_chat",chatID)
-              }
-            }
+              val chatID = generateChatID()
+              navToNextScreen("new_chat", chatID)
           }
         ) {
           Text(

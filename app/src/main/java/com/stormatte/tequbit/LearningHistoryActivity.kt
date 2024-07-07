@@ -29,6 +29,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -37,22 +40,42 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.database
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
+import com.stormatte.tequbit.parseResponse
 import java.time.format.DateTimeFormatter
 import java.util.Date
 
+suspend fun populateLearningHistory(learningHistory: MutableList<LearningHistoryItem>){
+    val userId = FirebaseAuth.getInstance().currentUser!!.uid
+    val learningHistories = Firebase.database.getReference("lessons/$userId").get().await()
+    for(item in learningHistories.children){
+        val lastItem = item.child((item.childrenCount - 1).toString()).value as Map<String, String>
+        var itemTitle = ""
+        if(lastItem["sender"]!! == "AI"){
+           val itemMap = parseResponse(lastItem["message"]!!)
+            println(itemMap)
+            itemTitle = itemMap["RESPONSE_TITLE"]!!
+        }
+        val itemId = item.key!!
+        learningHistory.add(LearningHistoryItem(itemTitle, itemId))
+    }
+}
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LearningHistory(navToScreens : ()-> Unit){
+fun LearningHistory(navToNext: (chatId: String) -> Unit){
+    val learningHistory = remember {mutableStateListOf<LearningHistoryItem>()}
+    LaunchedEffect(learningHistory) {
+        if(learningHistory.size == 0)
+            populateLearningHistory(learningHistory)
+    }
 
-    val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-    val date = LocalDate.parse("24-05-2024", formatter)
-    val learningHistory = listOf(
-        LearningHistory("DSU","Lesson",date),
-        LearningHistory("Min-Cut-Max-flow","Lesson",date.plusDays(1)),
-        LearningHistory("DSU","Lesson",date.plusDays(2)),
-        LearningHistory("DSU","Lesson",date.plusDays(2)),
-    )
 
     Box(modifier= Modifier){
         Column(
@@ -69,7 +92,9 @@ fun LearningHistory(navToScreens : ()-> Unit){
                 Icon(
                     imageVector = Icons.Sharp.KeyboardArrowLeft,
                     contentDescription = "New Chat Icon",
-                    modifier = Modifier.clickable {  } .width(35.dp)
+                    modifier = Modifier
+                        .clickable { }
+                        .width(35.dp)
                         .height(35.dp)
                 )
                 Spacer(modifier = Modifier.width(20.dp))
@@ -80,7 +105,9 @@ fun LearningHistory(navToScreens : ()-> Unit){
                 Icon(
                     imageVector = Icons.Sharp.Settings,
                     contentDescription = "New Chat Icon",
-                    modifier = Modifier.clickable {  } .width(30.dp)
+                    modifier = Modifier
+                        .clickable { }
+                        .width(30.dp)
                         .height(30.dp)
                 )
 
@@ -93,7 +120,7 @@ fun LearningHistory(navToScreens : ()-> Unit){
                 onValueChange = {},
                 modifier = Modifier
 //                    .shadow(4.dp, ambientColor = Color(40000000))
-                    .padding(top=10.dp)
+                    .padding(top = 10.dp)
                     .width(320.dp),
                 trailingIcon = {
                     Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Icon")
@@ -114,8 +141,7 @@ fun LearningHistory(navToScreens : ()-> Unit){
                     verticalArrangement = Arrangement.spacedBy(37.dp,)
                 ) {
                     items(learningHistory.size) {
-                        LearningHistoryCard(index = it, name = learningHistory[it].lesson, type =learningHistory[it].type , date = learningHistory[it].date)
-
+                        LearningHistoryCard(index = it, lesson = learningHistory[it], navToNext)
                     }
                 }
             }
@@ -127,7 +153,7 @@ fun LearningHistory(navToScreens : ()-> Unit){
                     .width(270.dp),
                 shape = RoundedCornerShape(20.dp),
                 onClick = {
-                    navToScreens()
+                    navToNext(generateChatID())
                 }
             ) {
                 Text(
@@ -146,7 +172,7 @@ fun LearningHistory(navToScreens : ()-> Unit){
 }
 
 @Composable
-fun LearningHistoryCard(index:Int,name:String,type:String,date:LocalDate){
+fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (chatId: String) -> Unit){
 
     val color1 = randomColor()
     val color2 = randomColor()
@@ -155,7 +181,9 @@ fun LearningHistoryCard(index:Int,name:String,type:String,date:LocalDate){
         modifier = Modifier
             .fillMaxWidth(),
 //            .height(56.dp),
-        onClick = {},
+        onClick = {
+            navToNext(lesson.chatID)
+        },
         shape = RoundedCornerShape(20.dp)
     ) {
             Text(
@@ -165,7 +193,7 @@ fun LearningHistoryCard(index:Int,name:String,type:String,date:LocalDate){
                     .background(
                         Brush.linearGradient(
                             listOf(
-                               color1,
+                                color1,
                                 color2
 
                             )
@@ -183,7 +211,7 @@ fun LearningHistoryCard(index:Int,name:String,type:String,date:LocalDate){
             )
         Spacer(modifier = Modifier.width(20.dp))
         Text(
-            text = "$name - $type - $date",
+            text = lesson.lesson,
             modifier = Modifier
                 .width(250.dp)
                 .padding(start = 20.dp),
@@ -209,4 +237,4 @@ fun randomColor(): Color {
     return Color(red, green, blue)
 }
 
-data class LearningHistory(val lesson:String, val type:String,val date:LocalDate)
+data class LearningHistoryItem(val lesson:String, val chatID: String)

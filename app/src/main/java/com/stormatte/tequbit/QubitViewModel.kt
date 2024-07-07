@@ -19,6 +19,12 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
+fun generateChatID() :String {
+    val chatID = "chat"+Date().time+"-"+UUID.randomUUID()
+    println("chatID is $chatID ")
+    return chatID
+}
+
 class QubitViewModel :ViewModel(){
 
     //user preference variables
@@ -42,14 +48,6 @@ class QubitViewModel :ViewModel(){
 
     fun setKnowledgePreference(value: String) {
         _knowledgePreference.value = value
-    }
-
-   fun generateChatID() :String {
-//        val date2 = Calendar.getInstance().timeInMillis
-//            val chatID = "chat"+UUID.randomUUID()
-        val chatID = "chat"+Date().time+"-"+UUID.randomUUID()
-        println("chatID is $chatID ")
-        return chatID
     }
 
 }

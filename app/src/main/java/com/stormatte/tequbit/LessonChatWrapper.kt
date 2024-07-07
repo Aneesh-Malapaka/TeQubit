@@ -1,28 +1,30 @@
 package com.stormatte.tequbit
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.BlockThreshold
 import com.google.ai.client.generativeai.type.Content
-import com.google.ai.client.generativeai.type.GenerationConfig
 import com.google.ai.client.generativeai.type.HarmCategory
 import com.google.ai.client.generativeai.type.SafetySetting
 import com.google.ai.client.generativeai.type.TextPart
 import com.google.ai.client.generativeai.type.asTextOrNull
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import org.json.JSONObject
 
 
 val GENERATIVE_MODEL = GenerativeModel(
     apiKey = BuildConfig.apiKey,
-    modelName = "gemini-1.5-flash",
+    modelName = "gemini-1.5-pro",
     safetySettings = listOf(
         SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE),
         SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.NONE),
@@ -30,71 +32,90 @@ val GENERATIVE_MODEL = GenerativeModel(
         SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH),
         )
 )
+val PROMPTS_KNOWLEDGE = mapOf(
+    "student" to "You are TeQubit, Your task is to help the students solve their queries in a way that is easy to understand by a student.\n" +
+            "Consider that the user has minimal knowledge on what they ask, and are looking for a concise and great explanations. Keep them as simplistic as possible",
+    "Entry Level" to "You are TeQubit, Your task is to help the users solve their queries related to programming.\n" +
+            "Consider that user knows a very little on what they are working on.\n" +
+            "Instead of repeating the basics,be more straight the point and solve their queries. It can be complex, yet try to rephrase them in a way that is easiest to understand",
+    "Professional" to "You are TeQubit, Your task is to help the user solve their queries in programming.\n" +
+            "Consider that the user has a good grasp of the topic but need a slight refresher, you are free to use complex terminologies",
+    "Self Learning" to "You are TeQubit, Your task is to help the user solve their queries in programming.\n" +
+            "Consider that the user is a self-learning individual that is used to learning from online sources. It can be complex, yet try to rephrase them in a way that is easiest to understand\n" +
+            "Assume that the user has significant, yet not complete knowledge"
+)
 
+val PROMPTS_RESPONSE_WAY = mapOf(
+    "Witty & Fun Sentences" to "- witty and humorous analogies\n" +
+            "- a bunch of emojis",
+    "Casual and Easy" to "- casual, easy and practical analogies",
+    "Include examples from games and pop culture" to "- analogies from games and pop cultures",
+    "Let TeQubit decide based on question" to "- analogies only when required, based on queries"
+)
+
+val META_QUERY = """
+    Sometimes, you can be greeted with additional meta queries. These include
+    -  <[QUIZ:<|>QUESTION: {question}]> query, which indicates that you need to quiz your students based on their previous chat.
+        - Your quiz is defined by four parameters: (difficulty_level, number_of_questions, scope, type)
+            - Difficulty level is on a score of 1 (being easiest) and 10 (being hardest)
+            - Number of questions is in range of (5, 30)
+            - Scope is one of (interview_based, exam_based)
+            - Type can be one of (multi_choice_question, multi_select_question, textual_answer_type). Multi choice is a single true from multiple questions type. Multi select is a multiple true from multiple questions type and text based requires textual responses
+        - You obtain these parameters by conversing with the user and then respond back to admin with the following response
+            - <[QUIZ:<|>DIFFICULTY_LEVEL: {difficulty_level}<|>NUMBER_OF_QUESTIONS: {number_of_questions}<|>SCOPE: {scope}<|>TYPE: {type}}]>
+        - Following that, you display every question, once per response to a user, in the format of <[QUIZ\nQUESTION: {question}]>
+        - You collect their response, score it and share it to admin in the following format
+            - <[QUIZ:<|>SCORE: {score}]>
+        - At the end, you send a meta response back to admin in the format
+            - <[QUIZ]>
+    - <[LESSON]> query, where you carefully break down the concept asked by a student into four different parts
+        - Your lesson is defined by a single textual parameter, which is the question asked by a user
+        - You then respond back to admin with <[LESSON: {"lesson_title": {lesson_title}]>
+        - Following that, you display your response,  structured with following main headings
+            - <[INTRODUCTION:<|>INTRODUCTION_TITLE: {introduction_title}<|>INTRODUCTION_BODY: {introduction_body}]> Which marks the introduction for a particular lesson
+            - One or more of explanations (or) mathematical and programmatic implementations in the format: <[DESCRIPTION:<|>DESCRIPTION_TITLE: {description_title}<|>DESCRIPTION_BODY: {description_body}}]> 
+            - One or more of applications (or) pros and cons in the format <[APPLICATION:<|>APPLICATION_TITLE: {application_title}<|>APPLICATION_BODY: {application_body}}]> 
+            - <[SUMMARY:<|>SUMMARY_TITLE: {summary_title}<|>SUMMARY_BODY: {summary_body}}]> Which marks the summary of the lesson
+    For every other query, your response should be of the format
+    <[RESPONSE:<|>RESPONSE_TITLE: {response_title}<|>RESPONSE_BODY: {response_body}]>
+    Note:
+    - You should not respond with any of meta query responses, unless you are specifically asked with the respective meta query. 
+    - All responses should follow given format, as they need to be parsed further by frontend
+    - All titles should be max five words long
+""".trimIndent()
 fun get_prompt(preferences: UserPreferences): String{
+    val knowledgePrompt = PROMPTS_KNOWLEDGE[preferences.knowledge]
 
-    val student_prompt = """
-        You are TeQubit, Your main task is to help the student solve their queries in a way that a student can understand. You will follow the rules below but on top of that you will also consider that the user has minimal knowledge of what they ask, are looking for a great explanation without too much complex stuff in one message.  
-    """.trimIndent()
-
-    val entry_level_prompt = """
-        You are TeQubit, Your main task is to help the user solve their queries related to programming. You will follow the rules below mainly but on top of that you will consider that user knows a little about what they are working on but they are stuck at the doubt they are asking. So, instead of telling the basics, discuss more straight into the point and solve their queries. It can be complex but do ask the user for their input on how it sounded.
-    """.trimIndent()
-    val professional_prompt = """
-        You are TeQubit, Your main task is to help the user solve their queries in programming. You will follow the rules below but on top of that you will consider this situation too. You are talking with a user who has grasp of the topic but are mostly stuck with a doubt, you can talk freely using complex terminologies without worrying about the pretense of understanding. The user might be professional but still needs your help and will use the meta queries below. 
-    """.trimIndent()
-
-    val self_learning_prompt = """
-        You are TeQubit, Your main task is to help the user solve their queries in programming. You will follow the rules below but on top of that you will have to consider this situation too. The user is a self-learning individual that is experienced to learning from online sources. So, assume that the user has knowledge but is not clear and proceed with that pre-text. They need your help in solving various doubts so, you have to look out using hard concepts without asking user. 
-    """.trimIndent()
-
-    val user_prompt = when(preferences.knowledge){
-        "student" -> student_prompt
-        "Entry Level" -> entry_level_prompt
-        "Professional" -> professional_prompt
-        "Self Learning" -> self_learning_prompt
-        else -> student_prompt
+    var responseWayPrompt = ""
+    for(responseWay in preferences.responseWay){
+        responseWayPrompt += PROMPTS_RESPONSE_WAY[responseWay] + "\n"
     }
-    // TODO: I tried to modify, what do you think?
-    val prompt = """
-        $user_prompt
-        .You are known for your witty and engaging methods of keeping your students entertained by teaching them interesting concepts in an inquisitive fashion.
-You are known to
-- give witty, yet easily understandable analogies to correlate concepts with
-- give complete explanations of a concept from a theoretical and applicative level 
-- Delve deep into math (or) programs, including throwing snippets of code / equations, whereever required
-- Use a lot of emojis
-- And you don't share your score with students
-
-Help them with their queries.  
-
-Sometimes, you can be greeted with additional meta queries. These include
--  [QUIZ] query, which indicates that you need to quiz your students based on their previous chat. 
-    - Your quiz is definied by four parameters: (difficulty_level, number_of_questions, scope, type)
-        - Difficulty level is on a score of 1 (being easiest) and 10 (being hardest)
-        - Number of questions is in range of (5, 30)
-        - Scope is one of (interview_based, exam_based)
-        - Type can be one of (multi_choice_question, multi_select_question, textual_answer_type). Multi choice is a single true from multiple questions type. Multi select is a multiple true from multiple questions type and text based requires textual responses
-    - You obtain these parameters by conversing with the user and then respond back to admin with the following response
-        - [QUIZ: {"difficulty_level": {difficulty_level}, "number_of_questions": {number_of_questions}, "scope": {scope}, "type": {type}}]
-    - Following that, you display every question, once per response to a user.
-    - You collect their response, score it and share it to admin in the following format
-        - [QUIZ: {"question": {question}, "score": {score}}]
-    - At the end, you send a meta response back to admin in the format
-        - [QUIZ]
-- [LESSON] query, where you carefully break down the concept asked by a student into four different parts
-    - Your lesson is defined by a single textual parameter, which is the question asked by a user
-    - You then respond back to admin with [LESSON: {"lesson_title": {lesson_title}]
-    - Following that, you display your response,  structured with following main headings
-        - [INTRODUCTION] {introduction} Which marks the introduction for a particular lesson
-        - One or more of explanations (or) mathematical and programmatic implementations in the format: [DESCRIPTION: {"description_title": {description_title}] {description} 
-        - One or more of applications (or) pros and cons in the format [APPLICATION: {"application_title": {application_title}] {application}
-        - [SUMMARY] {summary} Which marks the summary of the lesson
-
-    Every other query asked by user should be considered as a doubt and responded with a brief explanation, answering their doubts. You should not respond with any of meta query responses, unless you are specifically asked with the respective meta query. Remember you SHOULD NOT respond with the LEARN related meta queries even if the user has words like guide, teach, help, etc.. ONLY when they use the [LEARN] query you should generate it like above. Otherwise it should be short and to the point.
-    """.trimIndent()
-
+    val prompt = "$knowledgePrompt\nYour analogies are known to include:\n$responseWayPrompt\n\nHelp them with their queries.\n\n$META_QUERY"
     return prompt
+}
+
+fun parseResponse(response: String): Map<String, String>{
+    val responseSplit = response.split("<[*]>".toRegex())
+    val responseMap = mutableMapOf<String, String>()
+    for(split in responseSplit){
+        val split = split.replace("<[", "").replace("]>", "")
+        val metaStrPos = split.indexOf(":")
+        val metaStr = split.substring(0, metaStrPos)
+        val responseStr = split.substring(metaStrPos + 1).split("<|>")
+        for(line in responseStr){
+            if(!line.contains(":"))continue
+            var keyValue = line.split(":", limit = 2).toMutableList()
+            keyValue[1] = keyValue[1].replace("{", "").replace("}", "").trimStart().trimEnd()
+
+            while(keyValue[1].endsWith(">") || keyValue[1].endsWith("]")){ // parsing text generated by model is frustrating
+                keyValue[1] = keyValue[1].dropLast(1).trimEnd()
+            }
+            responseMap[keyValue[0]] = keyValue[1]
+        }
+        responseMap["meta"] = metaStr
+        println(responseMap)
+    }
+    return responseMap
 }
 
 class LessonChatWrapper : ViewModel() {
@@ -105,6 +126,13 @@ class LessonChatWrapper : ViewModel() {
     private  val _textField = mutableStateOf("")
     val textFieldVal : MutableState<String> = _textField
 
+    private val _chatTitle = mutableStateOf("New Chat")
+    val chatTitle : MutableState<String> = _chatTitle
+
+    fun setChatTitle(title:String){
+        _chatTitle.value = title
+    }
+
     private var acceptNewMessages: Boolean = true
     private var isChatInitialized = false
 
@@ -114,53 +142,66 @@ class LessonChatWrapper : ViewModel() {
             chatID = id
         else{
             chatID = id
-            _messages.clear()
-            isChatInitialized = false
+            resetWrapper()
             this.initializeChat()
         }
     }
 
+    fun resetWrapper(){
+        _messages.clear()
+        _textField.value = ""
+        _chatTitle.value = "New Chat"
+        isChatInitialized = false
+    }
+
+    private suspend fun userPreferences(): Pair<UserPreferences, String>{
+        val userId = FirebaseAuth.getInstance().currentUser!!.uid
+        val res = Firebase.database.getReference("users/$userId").get().await()
+        val data = res.value as Map<String, *>?
+        val preferences = UserPreferences(
+            knowledge = data!!["knowledge"] as String,
+            usage = data["usage"] as List<String>,
+            responseWay = data["responseWay"] as List<String>)
+        val prompt = get_prompt(preferences)
+        return Pair(preferences, prompt)
+    }
+
     fun initializeChat() {
-        println("chatID in initialize is $chatID")
         if (isChatInitialized) return
         isChatInitialized = true
 
         acceptNewMessages = false
-        Firebase.database.getReference("lessons/$chatID").get().addOnSuccessListener {
-            val data = it.value
+        viewModelScope.launch {
+            val userId = FirebaseAuth.getInstance().currentUser!!.uid
+            var data = Firebase.database.getReference("lessons/$userId/$chatID").get().await().value
             if (data != null) {
-                val server_messages = data as List<Map<String, String>>
-                println("server messages line 107 is $server_messages \n\n")
-                for(message in server_messages){
-                    _messages.add(MessageFormat(
-                        type=message["type"] as String,
-                        sender= if (message["sender"] == "USER") SenderType.USER else SenderType.AI,
-                        message=message["message"] as String
-                    ))
+                val serverMessages = data as List<Map<String, String>>
+                for(message in serverMessages) {
+                    var parsedMessage: Map<String, String>? = null
+                    if(message["type"] == "Input" && message["sender"] == "AI"){
+                        parsedMessage = parseResponse(message["message"] as String)
+                    }
+                    _messages.add(
+                        MessageFormat(
+                            type = message["type"] as String,
+                            sender = if (message["sender"] == "USER") SenderType.USER else SenderType.AI,
+                            message = message["message"] as String,
+                            parsedMessage = parsedMessage
+                        )
+                    )
                 }
+                val (preferences, prompt) = userPreferences()
+                _messages[0].message = prompt
+                acceptNewMessages = true
+            }
+            else {
+                val (preferences, prompt) = userPreferences()
+                _messages.add(MessageFormat(type="Meta", sender=SenderType.USER, message=prompt, null))
                 acceptNewMessages = true
             }
         }
-
-        if(!acceptNewMessages){
-            Firebase.database.getReference("users/$USER").get().addOnSuccessListener {
-                val data = it.value as Map<String, *>?
-                if (data != null) {
-                    val preferences = UserPreferences(
-                        knowledge = data["knowledge"] as String,
-                        usage = data["usage"] as List<String>,
-                        responseWay = data["responseWay"] as List<String>)
-                    println(preferences.toString())
-                    val prompt = get_prompt(preferences)
-                    _messages.add(MessageFormat(type="Meta", sender=SenderType.USER, message=prompt))
-                    acceptNewMessages = true
-                }
-            }
-        }
-
     }
     suspend fun askGemini() {
-        println("chatID in initialize is $chatID")
         if(_messages.size == 0 || _messages.last().sender == SenderType.AI || !acceptNewMessages){
             return
         }
@@ -177,22 +218,35 @@ class LessonChatWrapper : ViewModel() {
             }
             prompt = prompt.plus(Content(role = role, parts=listOf(part)))
         }
-        coroutineScope {
-//            GENERATIVE_MODEL.generateContentStream(*prompt.toTypedArray())
-//                .collect {
-//                    val response = it.candidates[0].content.parts[0].asTextOrNull()
-//                    _messages.add(MessageFormat(type="Input", sender=SenderType.USER, message=response.toString()))
-//                    updateDatabase()
-//                }
-            println("The prompt in raw form is $prompt \n\n the response prompt is ${prompt.toTypedArray()}")
-            val response = GENERATIVE_MODEL.generateContent(*prompt.toTypedArray()).candidates[0].content.parts[0].asTextOrNull()
-            _messages.add(MessageFormat(type="Input", sender=SenderType.AI, message=response.toString().trimEnd()))
-            updateDatabase()
+        viewModelScope.launch {
+            try{
+                val response = GENERATIVE_MODEL.generateContent(*prompt.toTypedArray()).candidates[0].content.parts[0].asTextOrNull()
+                val message = response.toString().trimEnd()
+                val responseMap = parseResponse(message)
+                _messages.add(MessageFormat(type="Input", sender=SenderType.AI, message=message, parsedMessage=responseMap))
+                updateDatabase()
+            }catch (e: Exception){
+                val error_message = "damn, guess you finally found something I'm not good at, sorry I can't help you with that query, please create a new chat and let's continue learning"
+                _messages.add(MessageFormat(type="Input", sender=SenderType.AI, message=error_message, parsedMessage=mapOf("meta" to "Error")))
+            }
+
+
+
         }
     }
 
-    private fun updateDatabase(){
-        Firebase.database.getReference("lessons/$chatID").setValue(this._messages)
+    private suspend fun updateDatabase(){
+        val userId = FirebaseAuth.getInstance().currentUser!!.uid
+        val dbRef = Firebase.database.getReference("lessons/$userId/$chatID")
+        val numDbMessages = dbRef.get().await().childrenCount.toInt()
+        for(i in numDbMessages until _messages.size){
+            val message = _messages[i]
+            dbRef.child(i.toString()).setValue(mapOf(
+                "type" to message.type,
+                "sender" to if(message.sender == SenderType.USER) "USER" else "AI",
+                "message" to message.message
+            ))
+        }
     }
 }
 

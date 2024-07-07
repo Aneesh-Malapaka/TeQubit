@@ -35,11 +35,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.firebase.ui.auth.data.model.User
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-
-
-val USER="Matt"
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun UserPreference(navToHomePage: () -> Unit) {
@@ -201,14 +202,8 @@ fun UserPreference(navToHomePage: () -> Unit) {
         ElevatedButton(
             modifier = Modifier.padding(20.dp),
             onClick = {
-
                 if (knowledgePreference.value.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
-                    val userPreferences = UserPreferences(
-                        knowledge = knowledgePreference.value,
-                        usage = selectedUsages.toList(),
-                        responseWay = selectedResponseWays.toList()
-                    )
-                    Firebase.database.getReference("users/$USER").setValue(userPreferences)
+                    onSelectedPreferences(knowledgePreference.value, selectedUsages.toList(), selectedResponseWays.toList())
                     navToHomePage()
                 } else {
                     Toast.makeText(
@@ -229,7 +224,20 @@ fun UserPreference(navToHomePage: () -> Unit) {
             )
         }
     }
+
 }
+
+fun onSelectedPreferences(knowledgePreference: String, usage: List<String>, responseWay: List<String>){
+    val userId = FirebaseAuth.getInstance().currentUser!!.uid
+    val userPreferences = UserPreferences(
+        knowledge = knowledgePreference,
+        usage = usage,
+        responseWay = responseWay
+    )
+    Firebase.database.getReference("users/$userId").setValue(userPreferences)
+}
+
+
 
 @Composable
 fun SingleChoiceCard(

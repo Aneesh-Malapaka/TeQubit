@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">TeQubit</string>
+    <string name="ai_prompt"></string>
+    <string name="meta_query">
+
+    </string>
+    <string name="pop_response">
+
+    </string>
+    <string name="specific_response">
+
+    </string>
+
 </resources>
