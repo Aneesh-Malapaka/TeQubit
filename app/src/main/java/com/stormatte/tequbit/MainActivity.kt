@@ -24,9 +24,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
@@ -34,8 +36,11 @@ import com.firebase.ui.auth.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.stormatte.tequbit.ui.theme.TeQubitTheme
 import kotlinx.coroutines.tasks.await
+import java.lang.reflect.Type
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -44,14 +49,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val viewModel:QubitViewModel = viewModel()
-
+            val gson = remember { Gson() }
             TeQubitTheme {
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    QubitNavigation(navController = navController)
+                    QubitNavigation(navController = navController,gson)
                 }
             }
         }
@@ -68,7 +73,7 @@ suspend fun userExistsAndSelectedPreferences(): Pair<Boolean, Boolean>{
 @SuppressLint("RestrictedApi")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun QubitNavigation(navController: NavHostController){
+fun QubitNavigation(navController: NavHostController,gson: Gson){
     val chatViewModel :LessonChatWrapper = viewModel()
     NavHost(navController = navController, startDestination = "initialization") {
         composable(route="user_login"){
@@ -128,19 +133,24 @@ fun QubitNavigation(navController: NavHostController){
         }
         composable("new_chat"){
             val chatIdToSend = navController.previousBackStackEntry?.savedStateHandle?.get<String>("ChatID")?:"failedID"
-            LessonChat(chatViewModel,chatIdToSend){
-                navController.navigate("home_screen"){
-                    popUpTo(navController.graph.id)
-                }
-            }
+            LessonChat(
+                chatViewModel,
+                chatIdToSend,
+                { navController.navigate("home_screen")
+                    { popUpTo(navController.graph.id) }
+                },
+                navController)
         }
-
-    }
-}
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TeQubitTheme {
-        UserPreference({})
+//        composable("lesson_window/{lessonJson}",
+//            arguments = listOf(navArgument("lessonJson"){ type = NavType.StringType })
+//        ){
+//            val lessonJSON = it.arguments?.getString("lessonJson")
+//            val lessonType: Type = object : TypeToken<MutableList<Map<String, String>>>() {}.type
+//            val lesson: MutableList<Map<String, String>> = gson.fromJson(lessonJSON, lessonType)
+//            LessonsWindow(lesson)
+//        }
+        composable("lesson_window"){
+            LessonsWindow(lesson = mutableListOf())
+        }
     }
 }

@@ -70,7 +70,7 @@ val META_QUERY = """
             - <[QUIZ]>
     - <[LESSON]> query, where you carefully break down the concept asked by a student into four different parts
         - Your lesson is defined by a single textual parameter, which is the question asked by a user
-        - You then respond back to admin with <[LESSON:<|>LESSON_TITLE: {lesson_title}]>
+        - You then respond back to admin with a format <[LESSON:<|>LESSON_TITLE: {lesson_title}<|>LESSON_INFO:{lesson_info}]> where lesson info is a greeting to start the lesson.
         - Following that, you display your response,  structured with following main headings
             - <[INTRODUCTION:<|>INTRODUCTION_TITLE: {introduction_title}<|>INTRODUCTION_BODY: {introduction_body}]> Which marks the introduction for a particular lesson
             - One or more of explanations (or) mathematical and programmatic implementations in the format: <[DESCRIPTION:<|>DESCRIPTION_TITLE: {description_title}<|>DESCRIPTION_BODY: {description_body}}]> 
@@ -222,6 +222,7 @@ class LessonChatWrapper : ViewModel() {
             try{
                 val response = GENERATIVE_MODEL.generateContent(*prompt.toTypedArray()).candidates[0].content.parts[0].asTextOrNull()
                 val message = response.toString().trimEnd()
+                println("the message in the line 225 is $message")
                 val responseMap = parseResponse(message)
                 _messages.add(MessageFormat(type="Input", sender=SenderType.AI, message=message, parsedMessage=responseMap))
                 updateDatabase()

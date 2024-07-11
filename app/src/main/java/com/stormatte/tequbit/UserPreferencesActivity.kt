@@ -8,10 +8,12 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
@@ -32,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -40,6 +43,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.stormatte.tequbit.ui.theme.TeQubitTheme
 import kotlinx.coroutines.tasks.await
 
 @Composable
@@ -61,7 +65,7 @@ fun UserPreference(navToHomePage: () -> Unit) {
     val scrollState = rememberScrollState()
 
     val knowledgeData = listOf(
-        KnowledgeLevel("Student", R.drawable.student),
+        KnowledgeLevel("Student", R.drawable.newstudentimage),
         KnowledgeLevel("Entry Level", R.drawable.entry_level),
         KnowledgeLevel("Professional", R.drawable.professional),
         KnowledgeLevel("Self Learning", R.drawable.selflearnt),
@@ -81,149 +85,149 @@ fun UserPreference(navToHomePage: () -> Unit) {
         ResponseWayInfo("Let TeQubit decide based on question", R.drawable.casualsearch),
     )
 
-    Column(
+   Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            modifier = Modifier
-                .padding(vertical = 20.dp, horizontal = 8.dp)
-                .fillMaxWidth(),
-            text = "Select you level of knowledge - ${knowledgePreference.value}",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Left
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(4.dp),
-            modifier = Modifier.height(550.dp)
-        ) {
-            items(knowledgeData.size) { index ->
-                val knowledgeLevel = knowledgeData[index]
-                SingleChoiceCard(
-                    level = knowledgeLevel.level,
-                    onCardSelected = {
-                        viewModel.setKnowledgePreference(it)
-                        if (preferenceSelected[0].selected) {
-                            preferenceSelected[0].selected = false
-                        } else {
-                            preferenceSelected[0].selected = true
-                            preferenceSelected[0].preferenceType = "Knowledge"
-                        }
-                    },
-                    imageSrc = knowledgeLevel.image,
-                    isSelected = knowledgeLevel.level == knowledgePreference.value
-                )
-            }
-        }
-
-        Text(
-            modifier = Modifier
-                .padding(vertical = 30.dp, horizontal = 5.dp)
-                .fillMaxWidth(),
-            text = "Select your primary usage - ${selectedUsages.toList()}",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.ExtraBold,
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(0.dp),
-            modifier = Modifier.height(570.dp)
-        ) {
-            items(usageData.size) { index ->
-                val usageItem = usageData[index]
-                MultipleChoiceCard(
-                    usage = usageItem.usage,
-                    onCardSelected = {
-                        if (selectedUsages.contains(it)) {
-                            selectedUsages.removeAll(listOf(it))
-                        } else {
-                            selectedUsages.add(it)
-                        }
-
-                        if (preferenceSelected[1].selected) {
-                            preferenceSelected[1].selected = false
-                        } else {
-                            preferenceSelected[1].selected = true
-                            preferenceSelected[1].preferenceType = "Usage"
-                        }
-                        println("The items are ${selectedUsages.toList()}")
-                        isChecked = !isChecked
-                    },
-                    imageSrc = usageItem.image,
-                    isSelected = isChecked
-                )
-            }
-        }
-        Text(
-            modifier = Modifier.padding(vertical = 30.dp, horizontal = 5.dp),
-            text = "Select how you want TeQubit to respond - ${selectedResponseWays.toList()}",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.ExtraBold,
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(0.dp),
-            modifier = Modifier.height(600.dp)
-        ) {
-            items(respondingData.size) { index ->
-                val resItem = respondingData[index]
-                MultipleChoiceCard(
-                    usage = resItem.wayToRespond,
-                    onCardSelected = {
-                        if (selectedResponseWays.contains(it)) {
-                            selectedResponseWays.removeAll(listOf(it))
-                        } else {
-                            selectedResponseWays.add(it)
-                        }
-
-                        if (preferenceSelected[2].selected) {
-                            preferenceSelected[2].selected = false
-                            println("It shouldn't be here lmao")
-                        } else {
-                            preferenceSelected[2].selected = true
-                            preferenceSelected[2].preferenceType = "Response Way"
-                        }
-                        println("The items are ${selectedResponseWays.toList()}")
-                        isChecked = !isChecked
-                    },
-                    imageSrc = resItem.image,
-                    isSelected = isChecked
-                )
-            }
-        }
-
-        ElevatedButton(
-            modifier = Modifier.padding(20.dp),
-            onClick = {
-                if (knowledgePreference.value.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
-                    onSelectedPreferences(knowledgePreference.value, selectedUsages.toList(), selectedResponseWays.toList())
-                    navToHomePage()
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Pls select the preferences from all categories. U must have missed one or more.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        ) {
+    )  {
             Text(
-                text = "Submit Preferences",
-                color = if (isSystemInDarkTheme()) {
-                    Color.White
-                } else {
-                    Color.Black
-                }
+                modifier = Modifier
+                    .padding(vertical = 20.dp, horizontal = 8.dp)
+                    .fillMaxWidth(),
+                text = "Select you level of knowledge - ${knowledgePreference.value}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Left
             )
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(4.dp),
+                modifier = Modifier.height(550.dp)
+            ) {
+                items(knowledgeData.size) { index ->
+                    val knowledgeLevel = knowledgeData[index]
+                    SingleChoiceCard(
+                        level = knowledgeLevel.level,
+                        onCardSelected = {
+                            viewModel.setKnowledgePreference(it)
+                            if (preferenceSelected[0].selected) {
+                                preferenceSelected[0].selected = false
+                            } else {
+                                preferenceSelected[0].selected = true
+                                preferenceSelected[0].preferenceType = "Knowledge"
+                            }
+                        },
+                        imageSrc = knowledgeLevel.image,
+                        isSelected = knowledgeLevel.level == knowledgePreference.value
+                    )
+                }
+            }
+
+            Text(
+                modifier = Modifier
+                    .padding(vertical = 30.dp, horizontal = 5.dp)
+                    .fillMaxWidth(),
+                text = "Select your primary usage - ${selectedUsages.toList()}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.height(570.dp)
+            ) {
+                items(usageData.size) { index ->
+                    val usageItem = usageData[index]
+                    MultipleChoiceCard(
+                        usage = usageItem.usage,
+                        onCardSelected = {
+                            if (selectedUsages.contains(it)) {
+                                selectedUsages.removeAll(listOf(it))
+                            } else {
+                                selectedUsages.add(it)
+                            }
+
+                            if (preferenceSelected[1].selected) {
+                                preferenceSelected[1].selected = false
+                            } else {
+                                preferenceSelected[1].selected = true
+                                preferenceSelected[1].preferenceType = "Usage"
+                            }
+                            println("The items are ${selectedUsages.toList()}")
+                            isChecked = !isChecked
+                        },
+                        imageSrc = usageItem.image,
+                        isSelected = isChecked
+                    )
+                }
+            }
+            Text(
+                modifier = Modifier.padding(vertical = 30.dp, horizontal = 5.dp),
+                text = "Select how you want TeQubit to respond - ${selectedResponseWays.toList()}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.height(600.dp)
+            ) {
+                items(respondingData.size) { index ->
+                    val resItem = respondingData[index]
+                    MultipleChoiceCard(
+                        usage = resItem.wayToRespond,
+                        onCardSelected = {
+                            if (selectedResponseWays.contains(it)) {
+                                selectedResponseWays.removeAll(listOf(it))
+                            } else {
+                                selectedResponseWays.add(it)
+                            }
+
+                            if (preferenceSelected[2].selected) {
+                                preferenceSelected[2].selected = false
+                                println("It shouldn't be here lmao")
+                            } else {
+                                preferenceSelected[2].selected = true
+                                preferenceSelected[2].preferenceType = "Response Way"
+                            }
+                            println("The items are ${selectedResponseWays.toList()}")
+                            isChecked = !isChecked
+                        },
+                        imageSrc = resItem.image,
+                        isSelected = isChecked
+                    )
+                }
+            }
+
+            ElevatedButton(
+                modifier = Modifier.padding(20.dp),
+                onClick = {
+                    if (knowledgePreference.value.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
+                        onSelectedPreferences(knowledgePreference.value, selectedUsages.toList(), selectedResponseWays.toList())
+                        navToHomePage()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Pls select the preferences from all categories. U must have missed one or more.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            ) {
+                Text(
+                    text = "Submit Preferences",
+                    color = if (isSystemInDarkTheme()) {
+                        Color.White
+                    } else {
+                        Color.Black
+                    }
+                )
+            }
         }
-    }
 
 }
 
@@ -268,23 +272,25 @@ fun SingleChoiceCard(
             Image(
                 modifier = Modifier
                     .aspectRatio(1f)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    ,
                 painter = image,
                 contentScale = ContentScale.FillBounds,
                 contentDescription = "$level knowledge"
             )
 
-            Text(
-                text = level,
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center,
-                color = if (isSystemInDarkTheme()) {
-                    Color.White
-                } else {
-                    Color.Black
-                },
-                modifier = Modifier.padding(24.dp),
-            )
+//            Text(
+//                text = level,
+//                fontSize = 14.sp,
+//                textAlign = TextAlign.Center,
+//                color = if (isSystemInDarkTheme()) {
+//                    Color.White
+//                } else {
+//                    Color.Black
+//                },
+//                modifier = Modifier.padding(24.dp),
+//            )
         }
     }
 }
@@ -356,3 +362,11 @@ data class UsageInfo(val usage: String, val image: Int)
 data class ResponseWayInfo(val wayToRespond: String, val image: Int)
 
 data class PreferenceSelected(var preferenceType: String = "", var selected: Boolean = false)
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    TeQubitTheme {
+        UserPreference({})
+    }
+}

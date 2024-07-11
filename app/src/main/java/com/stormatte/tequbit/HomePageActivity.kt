@@ -93,6 +93,7 @@ fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit){
           shape = RoundedCornerShape(20.dp),
           onClick = {
               val chatID = generateChatID()
+            println("new chatID is $chatID")
               navToNextScreen("new_chat", chatID)
           }
         ) {

@@ -55,13 +55,14 @@ import java.util.Date
 suspend fun populateLearningHistory(learningHistory: MutableList<LearningHistoryItem>){
     val userId = FirebaseAuth.getInstance().currentUser!!.uid
     val learningHistories = Firebase.database.getReference("lessons/$userId").get().await()
+    println("$userId and $learningHistories")
     for(item in learningHistories.children){
         val lastItem = item.child((item.childrenCount - 1).toString()).value as Map<String, String>
         var itemTitle = ""
-        if(lastItem["sender"]!! == "AI"){
+        if(lastItem["sender"] == "AI"){
            val itemMap = parseResponse(lastItem["message"]!!)
             println(itemMap)
-            itemTitle = itemMap["RESPONSE_TITLE"]!!
+            itemTitle = itemMap["RESPONSE_TITLE"].toString() ?: itemMap["LESSON_TITLE"].toString()
         }
         val itemId = item.key!!
         learningHistory.add(LearningHistoryItem(itemTitle, itemId))
@@ -75,7 +76,6 @@ fun LearningHistory(navToNext: (chatId: String) -> Unit){
         if(learningHistory.size == 0)
             populateLearningHistory(learningHistory)
     }
-
 
     Box(modifier= Modifier){
         Column(
