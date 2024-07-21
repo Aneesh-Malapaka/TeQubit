@@ -3,7 +3,6 @@ package com.stormatte.tequbit
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -20,9 +19,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.sharp.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.sharp.Add
-import androidx.compose.material.icons.sharp.KeyboardArrowLeft
 import androidx.compose.material.icons.sharp.Settings
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
@@ -34,23 +33,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.database
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
-import java.time.LocalDate
-import com.stormatte.tequbit.parseResponse
-import java.time.format.DateTimeFormatter
-import java.util.Date
 
 suspend fun populateLearningHistory(learningHistory: MutableList<LearningHistoryItem>){
     val userId = FirebaseAuth.getInstance().currentUser!!.uid
@@ -70,7 +60,7 @@ suspend fun populateLearningHistory(learningHistory: MutableList<LearningHistory
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LearningHistory(navToNext: (chatId: String) -> Unit){
+fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit){
     val learningHistory = remember {mutableStateListOf<LearningHistoryItem>()}
     LaunchedEffect(learningHistory) {
         if(learningHistory.size == 0)
@@ -90,8 +80,8 @@ fun LearningHistory(navToNext: (chatId: String) -> Unit){
                 horizontalArrangement = Arrangement.SpaceAround,
             ) {
                 Icon(
-                    imageVector = Icons.Sharp.KeyboardArrowLeft,
-                    contentDescription = "New Chat Icon",
+                    imageVector = Icons.AutoMirrored.Sharp.KeyboardArrowLeft,
+                    contentDescription = "Back to Home Icon",
                     modifier = Modifier
                         .clickable { }
                         .width(35.dp)
@@ -104,9 +94,11 @@ fun LearningHistory(navToNext: (chatId: String) -> Unit){
 
                 Icon(
                     imageVector = Icons.Sharp.Settings,
-                    contentDescription = "New Chat Icon",
+                    contentDescription = "Settings Icon",
                     modifier = Modifier
-                        .clickable { }
+                        .clickable {
+                            navToNext("settings","")
+                        }
                         .width(30.dp)
                         .height(30.dp)
                 )
@@ -153,7 +145,7 @@ fun LearningHistory(navToNext: (chatId: String) -> Unit){
                     .width(270.dp),
                 shape = RoundedCornerShape(20.dp),
                 onClick = {
-                    navToNext(generateChatID())
+                    navToNext("",generateChatID())
                 }
             ) {
                 Text(
@@ -172,7 +164,7 @@ fun LearningHistory(navToNext: (chatId: String) -> Unit){
 }
 
 @Composable
-fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (chatId: String) -> Unit){
+fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (destination:String,chatId: String) -> Unit){
 
     val color1 = randomColor()
     val color2 = randomColor()
@@ -182,7 +174,7 @@ fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (chatI
             .fillMaxWidth(),
 //            .height(56.dp),
         onClick = {
-            navToNext(lesson.chatID)
+            navToNext("",lesson.chatID)
         },
         shape = RoundedCornerShape(20.dp)
     ) {

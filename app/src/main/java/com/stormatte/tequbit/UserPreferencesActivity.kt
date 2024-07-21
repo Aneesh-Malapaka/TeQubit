@@ -66,9 +66,9 @@ fun UserPreference(navToHomePage: () -> Unit) {
 
     val knowledgeData = listOf(
         KnowledgeLevel("Student", R.drawable.newstudentimage),
-        KnowledgeLevel("Entry Level", R.drawable.entry_level),
-        KnowledgeLevel("Professional", R.drawable.professional),
-        KnowledgeLevel("Self Learning", R.drawable.selflearnt),
+        KnowledgeLevel("Entry Level", R.drawable.entrylevel1),
+        KnowledgeLevel("Professional", R.drawable.professional3),
+        KnowledgeLevel("Self Learning", R.drawable.selflearnt_1),
     )
 
     val usageData = listOf(
@@ -79,10 +79,10 @@ fun UserPreference(navToHomePage: () -> Unit) {
     )
 
     val respondingData = listOf(
-        ResponseWayInfo("Witty & Fun Sentences", R.drawable.learningnewthings),
-        ResponseWayInfo("Casual and Easy", R.drawable.learningnewthings),
-        ResponseWayInfo("Include examples from games and pop culture", R.drawable.doubts),
-        ResponseWayInfo("Let TeQubit decide based on question", R.drawable.casualsearch),
+        ResponseWayInfo("Witty & Fun Sentences", R.drawable.witty1),
+        ResponseWayInfo("Casual and Easy", R.drawable.cozy_2),
+        ResponseWayInfo("Include examples from games and pop culture", R.drawable.game_pop2),
+        ResponseWayInfo("Let TeQubit decide based on question", R.drawable.tequbitdecides),
     )
 
    Column(
@@ -336,17 +336,17 @@ fun MultipleChoiceCard(
                 contentDescription = usage
             )
 
-            Text(
-                text = usage,
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center,
-                color = if (isSystemInDarkTheme()) {
-                    Color.White
-                } else {
-                    Color.Black
-                },
-                modifier = Modifier.padding(24.dp),
-            )
+//            Text(
+//                text = usage,
+//                fontSize = 14.sp,
+//                textAlign = TextAlign.Center,
+//                color = if (isSystemInDarkTheme()) {
+//                    Color.White
+//                } else {
+//                    Color.Black
+//                },
+//                modifier = Modifier.padding(24.dp),
+//            )
         }
     }
 }

@@ -109,7 +109,9 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String, navBack: () -> Un
                     imageVector = Icons.Sharp.Settings,
                     contentDescription = "Settings Icon",
                     modifier = Modifier
-                        .clickable { }
+                        .clickable {
+
+                        }
                         .width(35.dp)
                         .height(35.dp)
                 )

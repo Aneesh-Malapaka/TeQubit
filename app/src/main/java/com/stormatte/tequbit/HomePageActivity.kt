@@ -4,11 +4,13 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,8 +24,10 @@ import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.sharp.KeyboardArrowLeft
 import androidx.compose.material.icons.sharp.Add
 import androidx.compose.material.icons.sharp.Refresh
+import androidx.compose.material.icons.sharp.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
@@ -69,11 +73,30 @@ fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit){
     Column(
       modifier = Modifier
         .fillMaxSize()
-        .padding(30.dp),
+        .padding(horizontal = 30.dp, vertical = 5.dp),
       verticalArrangement = Arrangement.SpaceAround,
       horizontalAlignment = Alignment.CenterHorizontally
-    ) {
 
+    ) {
+      Row(
+        modifier = Modifier
+          .height(25.dp)
+          .fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement =Arrangement.End,
+      ) {
+        Icon(
+          imageVector = Icons.Sharp.Settings,
+          contentDescription = "Settings Icon",
+          modifier = Modifier
+            .clickable {
+                navToNextScreen("settings","")
+            }
+            .width(25.dp)
+            .height(25.dp)
+        )
+
+      }
       Text(
         text = "Hello. I am TeQubit. How can I help you today?",
         fontSize = 26.sp,

@@ -75,7 +75,8 @@ suspend fun userExistsAndSelectedPreferences(): Pair<Boolean, Boolean>{
 @Composable
 fun QubitNavigation(navController: NavHostController,gson: Gson){
     val chatViewModel :LessonChatWrapper = viewModel()
-    NavHost(navController = navController, startDestination = "initialization") {
+    NavHost(navController = navController, startDestination = "initialization" +
+            "") {
         composable(route="user_login"){
             UserLogin{
                 navController.navigate("initialization"){
@@ -116,7 +117,11 @@ fun QubitNavigation(navController: NavHostController,gson: Gson){
                 run {
                     if (destination == "history") {
                         navController.navigate("learning_history")
-                    }else{
+                    }
+                    else if(destination=="settings"){
+                        navController.navigate("settings")
+                    }
+                    else{
                         navController.currentBackStackEntry?.savedStateHandle?.set("ChatID",chatID)
                         navController.navigate("new_chat")
                     }
@@ -124,10 +129,14 @@ fun QubitNavigation(navController: NavHostController,gson: Gson){
             }
         }
         composable("learning_history"){
-            LearningHistory{chatId ->
+            LearningHistory{destination,chatId ->
                 run{
-                    navController.currentBackStackEntry?.savedStateHandle?.set("ChatID",chatId)
-                    navController.navigate("new_chat")
+                    if(destination=="settings"){
+                        navController.navigate("settings")
+                    }else {
+                        navController.currentBackStackEntry?.savedStateHandle?.set("ChatID", chatId)
+                        navController.navigate("new_chat")
+                    }
                 }
             }
         }
@@ -151,6 +160,10 @@ fun QubitNavigation(navController: NavHostController,gson: Gson){
 //        }
         composable("lesson_window"){
             LessonsWindow(lesson = mutableListOf())
+        }
+
+        composable("settings"){
+            SettingsScreen()
         }
     }
 }
