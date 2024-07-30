@@ -4,7 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
@@ -34,23 +33,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.firebase.ui.auth.data.model.User
-import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import com.stormatte.tequbit.ui.theme.TeQubitTheme
-import kotlinx.coroutines.tasks.await
 
 @Composable
-fun UserPreference(navToHomePage: () -> Unit) {
+fun UserPreference(navToHomePage: () -> Unit, viewModel: QubitViewModel) {
     val context = LocalContext.current
-    val viewModel :QubitViewModel = viewModel()
-
     val preferenceSelected = viewModel.preferenceSelected
 
     val knowledgePreference = viewModel.knowledgePreference
@@ -85,17 +76,19 @@ fun UserPreference(navToHomePage: () -> Unit) {
         ResponseWayInfo("Let TeQubit decide based on question", R.drawable.tequbitdecides),
     )
 
-   Column(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally
-    )  {
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Column {
             Text(
                 modifier = Modifier
-                    .padding(vertical = 20.dp, horizontal = 8.dp)
+                    .padding(vertical = 20.dp, horizontal = 10.dp)
                     .fillMaxWidth(),
-                text = "Select you level of knowledge - ${knowledgePreference.value}",
+                text = "Select you level of knowledge",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Left
@@ -104,7 +97,7 @@ fun UserPreference(navToHomePage: () -> Unit) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(4.dp),
-                modifier = Modifier.height(550.dp)
+                modifier = Modifier.height(400.dp)
             ) {
                 items(knowledgeData.size) { index ->
                     val knowledgeLevel = knowledgeData[index]
@@ -125,11 +118,13 @@ fun UserPreference(navToHomePage: () -> Unit) {
                 }
             }
 
+        }
+        Column {
             Text(
                 modifier = Modifier
-                    .padding(vertical = 30.dp, horizontal = 5.dp)
+                    .padding(vertical = 20.dp, horizontal = 10.dp)
                     .fillMaxWidth(),
-                text = "Select your primary usage - ${selectedUsages.toList()}",
+                text = "Select your primary usage",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
             )
@@ -137,7 +132,7 @@ fun UserPreference(navToHomePage: () -> Unit) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.height(570.dp)
+                modifier = Modifier.height(400.dp)
             ) {
                 items(usageData.size) { index ->
                     val usageItem = usageData[index]
@@ -164,9 +159,12 @@ fun UserPreference(navToHomePage: () -> Unit) {
                     )
                 }
             }
+        }
+        Column {
+
             Text(
-                modifier = Modifier.padding(vertical = 30.dp, horizontal = 5.dp),
-                text = "Select how you want TeQubit to respond - ${selectedResponseWays.toList()}",
+                modifier = Modifier.padding(vertical = 20.dp, horizontal = 10.dp),
+                text = "Select how you want TeQubit to respond",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
             )
@@ -174,7 +172,7 @@ fun UserPreference(navToHomePage: () -> Unit) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.height(600.dp)
+                modifier = Modifier.height(400.dp)
             ) {
                 items(respondingData.size) { index ->
                     val resItem = respondingData[index]
@@ -203,35 +201,45 @@ fun UserPreference(navToHomePage: () -> Unit) {
                 }
             }
 
-            ElevatedButton(
-                modifier = Modifier.padding(20.dp),
-                onClick = {
-                    if (knowledgePreference.value.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
-                        onSelectedPreferences(knowledgePreference.value, selectedUsages.toList(), selectedResponseWays.toList())
-                        navToHomePage()
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "Pls select the preferences from all categories. U must have missed one or more.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            ) {
-                Text(
-                    text = "Submit Preferences",
-                    color = if (isSystemInDarkTheme()) {
-                        Color.White
-                    } else {
-                        Color.Black
-                    }
-                )
-            }
         }
+        ElevatedButton(
+            modifier = Modifier.padding(20.dp),
+            onClick = {
+                if (knowledgePreference.value.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
+                    onSelectedPreferences(
+                        knowledgePreference.value,
+                        selectedUsages.toList(),
+                        selectedResponseWays.toList()
+                    )
+                    navToHomePage()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Pls select the preferences from all categories. U must have missed one or more.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            },
+            contentPadding = PaddingValues(20.dp)
+        ) {
+            Text(
+                text = "Submit Preferences",
+                color = if (viewModel.darkTheme.value) {
+                    Color.White
+                } else {
+                    Color.Black
+                }
+            )
+        }
+    }
 
 }
 
-fun onSelectedPreferences(knowledgePreference: String, usage: List<String>, responseWay: List<String>){
+fun onSelectedPreferences(
+    knowledgePreference: String,
+    usage: List<String>,
+    responseWay: List<String>
+) {
     val userId = FirebaseAuth.getInstance().currentUser!!.uid
     val userPreferences = UserPreferences(
         knowledge = knowledgePreference,
@@ -240,7 +248,6 @@ fun onSelectedPreferences(knowledgePreference: String, usage: List<String>, resp
     )
     Firebase.database.getReference("users/$userId").setValue(userPreferences)
 }
-
 
 
 @Composable
@@ -273,8 +280,7 @@ fun SingleChoiceCard(
                 modifier = Modifier
                     .aspectRatio(1f)
                     .fillMaxWidth()
-                    .fillMaxHeight()
-                    ,
+                    .fillMaxHeight(),
                 painter = image,
                 contentScale = ContentScale.FillBounds,
                 contentDescription = "$level knowledge"
@@ -356,17 +362,18 @@ data class UserPreferences(
     val usage: List<String>,
     val responseWay: List<String>,
 
-)
+    )
+
 data class KnowledgeLevel(val level: String, val image: Int)
 data class UsageInfo(val usage: String, val image: Int)
 data class ResponseWayInfo(val wayToRespond: String, val image: Int)
 
 data class PreferenceSelected(var preferenceType: String = "", var selected: Boolean = false)
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TeQubitTheme {
-        UserPreference({})
-    }
-}
+//
+//@Preview(showBackground = true)
+//@Composable
+//fun GreetingPreview() {
+//    TeQubitTheme {
+//        UserPreference({})
+//    }
+//}

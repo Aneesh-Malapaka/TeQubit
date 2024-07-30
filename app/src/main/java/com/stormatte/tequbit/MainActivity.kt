@@ -1,46 +1,29 @@
 package com.stormatte.tequbit
 
 import android.annotation.SuppressLint
-import android.app.Activity.RESULT_OK
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.firebase.ui.auth.AuthUI
-import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
-import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.firebase.ui.auth.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.stormatte.tequbit.ui.theme.TeQubitTheme
 import kotlinx.coroutines.tasks.await
-import java.lang.reflect.Type
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -50,13 +33,14 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val viewModel:QubitViewModel = viewModel()
             val gson = remember { Gson() }
-            TeQubitTheme {
-
+            TeQubitTheme(
+                darkTheme = viewModel.darkTheme.value
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    QubitNavigation(navController = navController,gson)
+                    QubitNavigation(navController = navController,gson,viewModel)
                 }
             }
         }
@@ -73,7 +57,7 @@ suspend fun userExistsAndSelectedPreferences(): Pair<Boolean, Boolean>{
 @SuppressLint("RestrictedApi")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun QubitNavigation(navController: NavHostController,gson: Gson){
+fun QubitNavigation(navController: NavHostController,gson: Gson,viewModel: QubitViewModel){
     val chatViewModel :LessonChatWrapper = viewModel()
     NavHost(navController = navController, startDestination = "initialization" +
             "") {
@@ -85,11 +69,11 @@ fun QubitNavigation(navController: NavHostController,gson: Gson){
             }
         }
         composable("user_preference"){
-            UserPreference{
+            UserPreference({
                 navController.navigate("initialization"){
                     popUpTo(navController.graph.id)
                 }
-            }
+            },viewModel)
         }
         composable("initialization"){
             LaunchedEffect(null){
@@ -113,7 +97,7 @@ fun QubitNavigation(navController: NavHostController,gson: Gson){
         }
         composable("home_screen"){
             println("The backstack is ${navController.previousBackStackEntry}")
-            HomePage { destination, chatID ->
+            HomePage ({ destination, chatID ->
                 run {
                     if (destination == "history") {
                         navController.navigate("learning_history")
@@ -126,10 +110,10 @@ fun QubitNavigation(navController: NavHostController,gson: Gson){
                         navController.navigate("new_chat")
                     }
                 }
-            }
+            },viewModel)
         }
         composable("learning_history"){
-            LearningHistory{destination,chatId ->
+            LearningHistory({destination,chatId ->
                 run{
                     if(destination=="settings"){
                         navController.navigate("settings")
@@ -138,7 +122,7 @@ fun QubitNavigation(navController: NavHostController,gson: Gson){
                         navController.navigate("new_chat")
                     }
                 }
-            }
+            },viewModel)
         }
         composable("new_chat"){
             val chatIdToSend = navController.previousBackStackEntry?.savedStateHandle?.get<String>("ChatID")?:"failedID"
@@ -148,7 +132,8 @@ fun QubitNavigation(navController: NavHostController,gson: Gson){
                 { navController.navigate("home_screen")
                     { popUpTo(navController.graph.id) }
                 },
-                navController)
+                navController,
+                viewModel)
         }
 //        composable("lesson_window/{lessonJson}",
 //            arguments = listOf(navArgument("lessonJson"){ type = NavType.StringType })
@@ -159,11 +144,22 @@ fun QubitNavigation(navController: NavHostController,gson: Gson){
 //            LessonsWindow(lesson)
 //        }
         composable("lesson_window"){
-            LessonsWindow(lesson = mutableListOf())
+            LessonsWindow(lesson = mutableListOf(),viewModel)
         }
 
         composable("settings"){
-            SettingsScreen()
+            SettingsScreen({ destination ->
+                run {
+                    when(destination) {
+                        "updatePreferences" -> navController.navigate("user_preference")
+                        "FAQ"-> navController.navigate("FAQ")
+                    }
+                }
+            }, viewModel)
+        }
+
+        composable("FAQ"){
+            FAQ_Screen()
         }
     }
 }

@@ -57,8 +57,8 @@ import com.stormatte.tequbit.ui.theme.LightIconsText
 //    _noteList.value = newList
 //}
 @Composable
-fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String, navBack: () -> Unit,navController: NavHostController) {
-    val darkTheme = isSystemInDarkTheme()
+fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String, navBack: () -> Unit,navController: NavHostController,viewModel: QubitViewModel) {
+    val darkTheme = viewModel.darkTheme.value
     println("The chat id received is $chatID")
     LaunchedEffect(chatID) {
         chatViewModel.setChatID(chatID)

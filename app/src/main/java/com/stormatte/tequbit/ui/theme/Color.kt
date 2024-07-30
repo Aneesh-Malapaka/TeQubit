@@ -15,3 +15,15 @@ val DarkIconsText = Color.White // Icons and text for dark theme
 
 val LightBackground = Color(0xFFFFFBFE) // Light theme background
 val LightIconsText = Color.Black // Icons and text for light theme
+
+val DarkSettingsBackground = Color(0xF7555571)
+val LightSettingsBackground = Color(0xF7BBBBCA)
+
+val DarkSettingsHelpText = Color(0xFFDEDEDD)
+val LightSettingsHelpText = Color(0xD5000000)
+
+val updatePreferenceIconColorLight = Color(0xFFADFDAD)
+val updatePreferenceIconColorDark = Color(0xFFB3D1B3)
+val faqIconColorLight = Color(0xFF4678C9)
+val faqIconColorDark = Color(0xFF4678C9)
+val feedbackIconColor = Color(0xFFE93D3D)

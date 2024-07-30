@@ -50,4 +50,10 @@ class QubitViewModel :ViewModel(){
         _knowledgePreference.value = value
     }
 
+    private val _darkTheme = mutableStateOf(true)
+    val darkTheme :State<Boolean> = _darkTheme
+
+    fun setDarkThemeValue(value:Boolean){
+        _darkTheme.value = value
+    }
 }

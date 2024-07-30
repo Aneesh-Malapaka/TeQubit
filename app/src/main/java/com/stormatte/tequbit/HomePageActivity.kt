@@ -59,8 +59,9 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit){
-  val model :QubitViewModel = viewModel()
+fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit, viewModel: QubitViewModel){
+
+  val darkTheme = viewModel.darkTheme.value
   val caro_images = listOf(R.drawable.carousel_slide_1,R.drawable.entry_level,R.drawable.learningnewthings)
   val pagerState = rememberPagerState(pageCount= { caro_images.size })
   val pagerSize = remember {
@@ -122,7 +123,7 @@ fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit){
         ) {
           Text(
             text = "Start a New Learning Session",
-            color = if(isSystemInDarkTheme()){
+            color = if(darkTheme){
               Color.White
             }else{
               Color.Black
@@ -143,7 +144,7 @@ fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit){
         ) {
           Text(
             text = "Your Learning History",
-            color = if(isSystemInDarkTheme()){
+            color = if(darkTheme){
                 Color.White
             }else{
               Color.Black

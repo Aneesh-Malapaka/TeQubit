@@ -1,20 +1,13 @@
 package com.stormatte.tequbit
 
-import android.graphics.Typeface
-import android.view.Gravity
 import android.view.View
 import android.widget.TextView
-import android.widget.Toast
-import androidx.collection.MutableObjectList
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -25,49 +18,35 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.google.gson.Gson
-import com.google.gson.JsonArray
-import com.google.gson.reflect.TypeToken
 import io.noties.markwon.Markwon
-import java.lang.System.out
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LessonsWindow(lesson: MutableList<Map<String, String>>) {
+fun LessonsWindow(lesson: MutableList<Map<String, String>>, viewModel: QubitViewModel) {
     val context = LocalContext.current
     //lesson structure is as follows
     // listOf(mapOf(meta to mapOf(section_title to section_content))
+    val darkTheme = viewModel.darkTheme.value
     val lesson = mutableListOf(
         mapOf(
             "INTRODUCTION" to
@@ -199,7 +178,7 @@ fun LessonsWindow(lesson: MutableList<Map<String, String>>) {
         )
 
     // obtaining an instance of Markwon
-    val markwon = remember { Markwon.create(context) };
+    val markwon = remember { Markwon.create(context) }
 
     val pagerState = rememberPagerState(pageCount = { lesson.size })
     val currentPage by remember { derivedStateOf { pagerState.currentPage } }
@@ -241,7 +220,7 @@ fun LessonsWindow(lesson: MutableList<Map<String, String>>) {
                                         lineHeight = 30.sp
                                     )
                                     Spacer(modifier = Modifier.height(30.dp))
-                                    MarkdownText(markdown = it.value, markwon = markwon)
+                                    MarkdownText(markdown = it.value, markwon = markwon,darkTheme=darkTheme)
                                 }
                             }
                             // The inner content should not be affected by verticalArrangement in parent Column
@@ -274,14 +253,14 @@ fun LessonsWindow(lesson: MutableList<Map<String, String>>) {
 }
 
 @Composable
-fun MarkdownText(markdown: String, modifier: Modifier = Modifier, markwon: Markwon) {
-    val dark = isSystemInDarkTheme()
+fun MarkdownText(markdown: String, modifier: Modifier = Modifier, markwon: Markwon,darkTheme:Boolean) {
+
     AndroidView(
         factory = { context ->
             TextView(context).apply {
                 textSize = 18f // in SP
-                if(dark){
-                    setTextColor(ContextCompat.getColor(context,R.color.white));
+                if(darkTheme){
+                    setTextColor(ContextCompat.getColor(context,R.color.white))
                 }
                 setLineSpacing(5.2f,1.3f)
                 textAlignment = View.TEXT_ALIGNMENT_GRAVITY

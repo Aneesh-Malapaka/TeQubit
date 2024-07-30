@@ -1,7 +1,9 @@
 package com.stormatte.tequbit
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -23,20 +25,27 @@ import androidx.compose.material.icons.automirrored.sharp.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.sharp.Add
 import androidx.compose.material.icons.sharp.Settings
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -45,13 +54,12 @@ import kotlinx.coroutines.tasks.await
 suspend fun populateLearningHistory(learningHistory: MutableList<LearningHistoryItem>){
     val userId = FirebaseAuth.getInstance().currentUser!!.uid
     val learningHistories = Firebase.database.getReference("lessons/$userId").get().await()
-    println("$userId and $learningHistories")
+//    println("$userId and $learningHistories")
     for(item in learningHistories.children){
         val lastItem = item.child((item.childrenCount - 1).toString()).value as Map<String, String>
         var itemTitle = ""
         if(lastItem["sender"] == "AI"){
            val itemMap = parseResponse(lastItem["message"]!!)
-            println(itemMap)
             itemTitle = itemMap["RESPONSE_TITLE"].toString() ?: itemMap["LESSON_TITLE"].toString()
         }
         val itemId = item.key!!
@@ -60,12 +68,19 @@ suspend fun populateLearningHistory(learningHistory: MutableList<LearningHistory
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit){
-    val learningHistory = remember {mutableStateListOf<LearningHistoryItem>()}
-    LaunchedEffect(learningHistory) {
-        if(learningHistory.size == 0)
-            populateLearningHistory(learningHistory)
+fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit,viewModel: QubitViewModel){
+    val originalLearningHistory = remember { mutableStateListOf<LearningHistoryItem>() }
+    val displayedLearningHistory = remember { mutableStateListOf<LearningHistoryItem>() }
+
+    LaunchedEffect(Unit) {
+        if (originalLearningHistory.isEmpty()) {
+            populateLearningHistory(originalLearningHistory)
+            displayedLearningHistory.addAll(originalLearningHistory)
+        }
     }
+
+    var searchTerm by remember { mutableStateOf("") }
+    val darkTheme = viewModel.darkTheme.value
 
     Box(modifier= Modifier){
         Column(
@@ -97,7 +112,7 @@ fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit){
                     contentDescription = "Settings Icon",
                     modifier = Modifier
                         .clickable {
-                            navToNext("settings","")
+                            navToNext("settings", "")
                         }
                         .width(30.dp)
                         .height(30.dp)
@@ -108,8 +123,14 @@ fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit){
             Spacer(modifier = Modifier.height(20.dp))
             //TextField Line
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = searchTerm,
+                onValueChange = {
+                    //programming fact: the basics matter - an empty string is a substring of every string - don't remove this comment
+                    searchTerm = it
+                    val filteredHistory = searchHistory(originalLearningHistory, it)
+                    displayedLearningHistory.clear()
+                    displayedLearningHistory.addAll(filteredHistory)
+                },
                 modifier = Modifier
 //                    .shadow(4.dp, ambientColor = Color(40000000))
                     .padding(top = 10.dp)
@@ -128,12 +149,12 @@ fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit){
                     columns = GridCells.Fixed(1),
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier
-                        .height(350.dp)
+                        .height(390.dp)
                         .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(37.dp,)
+                    verticalArrangement = Arrangement.spacedBy(35.dp,)
                 ) {
-                    items(learningHistory.size) {
-                        LearningHistoryCard(index = it, lesson = learningHistory[it], navToNext)
+                    items(displayedLearningHistory.size) {
+                        LearningHistoryCard(index = it, lesson = displayedLearningHistory[it], navToNext,darkTheme)
                     }
                 }
             }
@@ -150,7 +171,7 @@ fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit){
             ) {
                 Text(
                     text = "Start a New Learning Session",
-                    color = if(isSystemInDarkTheme()){
+                    color = if(darkTheme){
                         Color.White
                     }else{
                         Color.Black
@@ -164,7 +185,7 @@ fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit){
 }
 
 @Composable
-fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (destination:String,chatId: String) -> Unit){
+fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (destination:String,chatId: String) -> Unit,darkThemeValue:Boolean){
 
     val color1 = randomColor()
     val color2 = randomColor()
@@ -176,6 +197,9 @@ fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (desti
         onClick = {
             navToNext("",lesson.chatID)
         },
+        elevation = ButtonDefaults.elevatedButtonElevation(
+            4.dp
+        ),
         shape = RoundedCornerShape(20.dp)
     ) {
             Text(
@@ -187,13 +211,12 @@ fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (desti
                             listOf(
                                 color1,
                                 color2
-
                             )
                         ),
                         shape = RoundedCornerShape(50.dp)
                     )
                     .padding(10.dp),
-                color = if(isSystemInDarkTheme()){
+                color = if(darkThemeValue){
                     Color.White
                 }else{
                     Color.Black
@@ -208,7 +231,7 @@ fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (desti
                 .width(250.dp)
                 .padding(start = 20.dp),
             fontSize = 17.sp,
-            color = if(isSystemInDarkTheme()){
+            color = if(darkThemeValue){
                 Color.White
             }else{
                 Color.Black
@@ -218,6 +241,15 @@ fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (desti
     }
 }
 
+fun searchHistory(learningHistory: SnapshotStateList<LearningHistoryItem>, searchTerm:String) : SnapshotStateList<LearningHistoryItem>{
+    val filteredHistory = learningHistory.filter {
+        it.lesson.contains(searchTerm, ignoreCase = true)
+    }
+
+    val result = SnapshotStateList<LearningHistoryItem>()
+    result.addAll(filteredHistory)
+    return result
+}
 @Composable
 fun IconFunction(){
     Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Icon")
