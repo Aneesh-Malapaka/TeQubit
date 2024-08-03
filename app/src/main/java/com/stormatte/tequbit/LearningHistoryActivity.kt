@@ -60,7 +60,7 @@ suspend fun populateLearningHistory(learningHistory: MutableList<LearningHistory
         var itemTitle = ""
         if(lastItem["sender"] == "AI"){
            val itemMap = parseResponse(lastItem["message"]!!)
-            itemTitle = itemMap["RESPONSE_TITLE"].toString() ?: itemMap["LESSON_TITLE"].toString()
+            itemTitle = itemMap[0].values.first().keys.first()
         }
         val itemId = item.key!!
         learningHistory.add(LearningHistoryItem(itemTitle, itemId))

@@ -3,6 +3,7 @@ package com.stormatte.tequbit
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -129,22 +130,13 @@ fun QubitNavigation(navController: NavHostController,gson: Gson,viewModel: Qubit
             LessonChat(
                 chatViewModel,
                 chatIdToSend,
-                { navController.navigate("home_screen")
-                    { popUpTo(navController.graph.id) }
-                },
                 navController,
                 viewModel)
         }
-//        composable("lesson_window/{lessonJson}",
-//            arguments = listOf(navArgument("lessonJson"){ type = NavType.StringType })
-//        ){
-//            val lessonJSON = it.arguments?.getString("lessonJson")
-//            val lessonType: Type = object : TypeToken<MutableList<Map<String, String>>>() {}.type
-//            val lesson: MutableList<Map<String, String>> = gson.fromJson(lessonJSON, lessonType)
-//            LessonsWindow(lesson)
-//        }
         composable("lesson_window"){
-            LessonsWindow(lesson = mutableListOf(),viewModel)
+            val lesson = navController.previousBackStackEntry?.savedStateHandle?.get<List<Map<String, Map<String, String>>>>("lesson_data")?:listOf()
+            LessonsWindow(lesson = lesson,viewModel = viewModel)
+
         }
 
         composable("settings"){

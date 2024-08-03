@@ -39,12 +39,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import com.stormatte.tequbit.ui.theme.DarkIconsText
 import com.stormatte.tequbit.ui.theme.LightIconsText
+
 
 // use it for viewModel, (stackoverflow - https://stackoverflow.com/questions/72541475/how-to-add-more-items-to-a-static-list-in-jetpack-compose)
 //val _noteList = remember { MutableStateFlow(listOf<String>()) }
@@ -57,7 +56,7 @@ import com.stormatte.tequbit.ui.theme.LightIconsText
 //    _noteList.value = newList
 //}
 @Composable
-fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String, navBack: () -> Unit,navController: NavHostController,viewModel: QubitViewModel) {
+fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String,navController: NavHostController,viewModel: QubitViewModel) {
     val darkTheme = viewModel.darkTheme.value
     println("The chat id received is $chatID")
     LaunchedEffect(chatID) {
@@ -68,8 +67,8 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String, navBack: () -> Un
         println("Asking Gemini")
         try{
             chatViewModel.askGemini()
-            if(chatViewModel.messages.size != 0 && chatViewModel.messages.last().parsedMessage != null && chatViewModel.messages.last().parsedMessage!!["meta"] == "RESPONSE"){
-                chatViewModel.setChatTitle(chatViewModel.messages.last().parsedMessage!!["RESPONSE_TITLE"]!!)
+            if(chatViewModel.messages.size != 0 && chatViewModel.messages.last().parsedMessage != null && chatViewModel.messages.last().parsedMessage!!.isNotEmpty()){
+                chatViewModel.setChatTitle(chatViewModel.messages.last().parsedMessage!![0].values.first().keys.first())
             }
         }
         catch (it: Exception) {
@@ -95,7 +94,9 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String, navBack: () -> Un
                     contentDescription = "Back To Home",
                     modifier = Modifier
                         .clickable {
-                            navBack()
+                            navController.navigate("home_screen") {
+                                popUpTo(navController.graph.id)
+                            }
                         }
                         .width(35.dp)
                         .height(35.dp)
@@ -138,7 +139,7 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String, navBack: () -> Un
                             MessageDisplay(
                                 index = message,
                                 senderType = chatViewModel.messages[message].sender,
-                                parsedMessage = chatViewModel.messages[message].message,
+                                chat = chatViewModel.messages[message].message,
                                 navController
                             )
 
@@ -221,29 +222,44 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String, navBack: () -> Un
     }
 }
 @Composable
-fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: Map<String, String>,navController: NavHostController){
+fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: List<Map<String, Map<String, String>>>,navController: NavHostController){
     var chat = ""
-    val lessonArray:MutableList<Map<String,String>> = mutableListOf()
-    if(parsedMessage["meta"] == "RESPONSE"){
-        chat = parsedMessage["RESPONSE_BODY"]!!
+    var meta = ""
+
+    if(parsedMessage[0].containsKey("RESPONSE")){
+        chat = parsedMessage[0]["RESPONSE"]!!.values.first()
+        meta = "RESPONSE"
     }
-    else if(parsedMessage["meta"] == "LESSON"){
-        chat = parsedMessage["LESSON_INFO"].toString()
+    else if(parsedMessage[0].containsKey("LESSON")){
+        chat = parsedMessage[0]["LESSON"]!!.values.first()
+        meta = "LESSON"
     }
-    else{
-        lessonArray.toMutableList().add(parsedMessage)
+    else if(parsedMessage[0].containsKey("ERROR")){
+        chat = parsedMessage[0]["ERROR"]!!.values.first()
+        meta = "ERROR"
     }
-    return MessageDisplay(index, senderType, chat, navController, metaType = parsedMessage["meta"].toString(),lessonArray)
+    return MessageDisplay(
+        index = index,
+        senderType = senderType,
+        chat = chat,
+        navController = navController,
+        metaType = meta,
+        lesson = parsedMessage,
+    )
 }
 
 @Composable
-fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: String,  navController: NavHostController, metaType:String="", lesson:MutableList<Map<String,String>> = mutableListOf() ) {
+fun MessageDisplay(
+    index: Int,
+    senderType: Enum<SenderType>,
+    chat: String,
+    navController: NavHostController,
+    metaType:String="",
+    lesson:List<Map<String, Map<String,String>>> = mutableListOf()
+){
 
     val gson = remember { Gson() }
     val isSenderAI: Boolean = senderType == SenderType.AI
-    var chat = parsedMessage
-
-
     val color1 = Color(0xD296C218)
     val color2 = Color(0xD218C21B)
     val color3 = Color(0xD218C2C2)
@@ -312,8 +328,11 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: Stri
                 if(metaType=="LESSON")
                 Column {
                     ElevatedButton(onClick = {
-                        val lessonJson = gson.toJson(lesson)
-//                        navController.navigate("lesson_window/$lessonJson")
+                        val lesson_body = mutableListOf<Map<String, Map<String, String>>>()
+                        for(i in 2..< lesson.size){
+                            lesson_body.add(lesson[i])
+                        }
+                        navController.currentBackStackEntry?.savedStateHandle?.set("lesson_data", lesson_body)
                         navController.navigate("lesson_window")
                     }) {
                         Text(text = "Start Lesson Now")
@@ -371,7 +390,7 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: Stri
     Spacer(modifier =Modifier.height(15.dp))
 }
 
-data class MessageFormat(val type: String, val sender: Enum<SenderType>, var message: String, var parsedMessage: Map<String, String>?)
+data class MessageFormat(val type: String, val sender: Enum<SenderType>, var message: String, var parsedMessage: List<Map<String, Map<String, String>>>?)
 
 enum class SenderType {
     AI,

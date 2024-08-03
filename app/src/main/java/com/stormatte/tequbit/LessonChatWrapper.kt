@@ -1,5 +1,6 @@
 package com.stormatte.tequbit
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
@@ -33,7 +34,7 @@ val GENERATIVE_MODEL = GenerativeModel(
         )
 )
 val PROMPTS_KNOWLEDGE = mapOf(
-    "student" to "You are TeQubit, Your task is to help the students solve their queries in a way that is easy to understand by a student.\n" +
+    "Student" to "You are TeQubit, Your task is to help the students solve their queries in a way that is easy to understand by a student.\n" +
             "Consider that the user has minimal knowledge on what they ask, and are looking for a concise and great explanations. Keep them as simplistic as possible",
     "Entry Level" to "You are TeQubit, Your task is to help the users solve their queries related to programming.\n" +
             "Consider that user knows a very little on what they are working on.\n" +
@@ -62,26 +63,38 @@ val META_QUERY = """
             - Scope is one of (interview_based, exam_based)
             - Type can be one of (multi_choice_question, multi_select_question, textual_answer_type). Multi choice is a single true from multiple questions type. Multi select is a multiple true from multiple questions type and text based requires textual responses
         - You obtain these parameters by conversing with the user and then respond back to admin with the following response
-            - <[QUIZ:<|>DIFFICULTY_LEVEL: {difficulty_level}<|>NUMBER_OF_QUESTIONS: {number_of_questions}<|>SCOPE: {scope}<|>TYPE: {type}}]>
-        - Following that, you display every question, once per response to a user, in the format of <[QUIZ\nQUESTION: {question}]>
+            - <[QUIZ:<|>{difficulty_level}<|>{number_of_questions}<|>{scope}<|>{type}}]>
+        - Following that, you display every question, once per response to a user, in the format of <[QUIZ_QUERY:<|>{question}]>
         - You collect their response, score it and share it to admin in the following format
-            - <[QUIZ:<|>SCORE: {score}]>
+            - <[QUIZ_SCORE:<|>{score}]>
         - At the end, you send a meta response back to admin in the format
             - <[QUIZ]>
     - <[LESSON]> query, where you carefully break down the concept asked by a student into four different parts
         - Your lesson is defined by a single textual parameter, which is the question asked by a user
-        - You then respond back to admin with a format <[LESSON:<|>LESSON_TITLE: {lesson_title}<|>LESSON_INFO:{lesson_info}]> where lesson info is a greeting to start the lesson.
-        - Following that, you display your response,  structured with following main headings
-            - <[INTRODUCTION:<|>INTRODUCTION_TITLE: {introduction_title}<|>INTRODUCTION_BODY: {introduction_body}]> Which marks the introduction for a particular lesson
-            - One or more of explanations (or) mathematical and programmatic implementations in the format: <[DESCRIPTION:<|>DESCRIPTION_TITLE: {description_title}<|>DESCRIPTION_BODY: {description_body}}]> 
-            - One or more of applications (or) pros and cons in the format <[APPLICATION:<|>APPLICATION_TITLE: {application_title}<|>APPLICATION_BODY: {application_body}}]> 
-            - <[SUMMARY:<|>SUMMARY_TITLE: {summary_title}<|>SUMMARY_BODY: {summary_body}}]> Which marks the summary of the lesson
+        - You then respond back to admin with the following:
+            - <[LESSON:<|>{lesson_title}<|>{lesson_info}]> where lesson info is a greeting to start the lesson.
+            - <[INTRODUCTION:<|>{introduction_title}<|>{introduction_body}]> Which marks the introduction for a particular lesson
+            - One or more of explanations (or) mathematical and programmatic implementations in the format: <[DESCRIPTION:<|>{description_title}<|>{description_body}}]> 
+            - One or more of applications (or) pros and cons in the format <[APPLICATION:<|>{application_title}<|>{application_body}}]> 
+            - <[SUMMARY:<|>{summary_title}<|>{summary_body}}]> Which marks the summary of the lesson
+            - All this has to be sent in a single response.
     For every other query, your response should be of the format
-    <[RESPONSE:<|>RESPONSE_TITLE: {response_title}<|>RESPONSE_BODY: {response_body}]>
+    <[RESPONSE:<|>response_title}<|>{response_body}]>
     Note:
     - You should not respond with any of meta query responses, unless you are specifically asked with the respective meta query. 
     - All responses should follow given format, as they need to be parsed further by frontend
-    - All titles should be max five words long, should be appropriate to whole chat, rather than single response
+    - All titles should be max five words long, formal and should be appropriate to full chat, rather than the particular response
+    
+    Here is an example lesson response with appropriate format:
+    <[LESSON:<|>I am a crazy title<|>Alright! Here is your lesson that describes the stuff. Just click the button to get started]>
+    <[INTRODUCTION:<|>your title here<|>INTRODUCTION_BODY: loreum ipsum blah blah fifty to hundred word body here]>
+    <[DESCRIPTION:<|>your description title here<|><|> blah blah very long description no word limit here]>
+    <[DESCRIPTION:<|>your description title here<|><|> blah blah very long description you can use markdown blocks to highlight text]>
+    <[APPLICATION:<|>your application title here<|><|> blah blah very long list of applications maybe]>
+    <[SUMMARY:<|>Your summary title here<|>Short crisp and to the point summary of lesson here]>
+    
+    And here is an example general response
+    <[RESPONSE:<|>Response Title here<|>Your body here]>
 """.trimIndent()
 fun get_prompt(preferences: UserPreferences): String{
     val knowledgePrompt = PROMPTS_KNOWLEDGE[preferences.knowledge]
@@ -94,26 +107,41 @@ fun get_prompt(preferences: UserPreferences): String{
     return prompt
 }
 
-fun parseResponse(response: String): Map<String, String>{
-    val responseSplit = response.split("<[*]>".toRegex())
-    val responseMap = mutableMapOf<String, String>()
+fun parseResponse(response: String): List<Map<String, Map<String, String>>>{
+    println("RESPONSE: $response")
+    var responseSplit = response.split("<[")
+    println("RESPONSE " + responseSplit)
+    var responseMap = mutableListOf<Map<String, Map<String, String>>>()
     for(split in responseSplit){
-        val split = split.replace("<[", "").replace("]>", "")
-        val metaStrPos = split.indexOf(":")
-        val metaStr = split.substring(0, metaStrPos)
-        val responseStr = split.substring(metaStrPos + 1).split("<|>")
-        for(line in responseStr){
-            if(!line.contains(":"))continue
-            var keyValue = line.split(":", limit = 2).toMutableList()
-            keyValue[1] = keyValue[1].replace("{", "").replace("}", "").trimStart().trimEnd()
-
-            while(keyValue[1].endsWith(">") || keyValue[1].endsWith("]")){ // parsing text generated by model is frustrating
-                keyValue[1] = keyValue[1].dropLast(1).trimEnd()
-            }
-            responseMap[keyValue[0]] = keyValue[1]
+        if(!split.contains(":")){
+            continue
         }
-        responseMap["meta"] = metaStr
-        println(responseMap)
+        var parsedSplit = split
+        if(parsedSplit.contains("<[")) {
+            parsedSplit = parsedSplit.replace("<[", "")
+        }
+        if(parsedSplit.contains("]>")) {
+            parsedSplit = parsedSplit.replace("]>", "")
+        }
+        parsedSplit = parsedSplit.trimStart().trimEnd()
+
+        val metaStrPos = parsedSplit.indexOf(":")
+        val metaStr = parsedSplit.substring(0, metaStrPos)
+        val responseStr = parsedSplit.substring(metaStrPos + 1).split("<|>")
+        var split_response = mutableListOf<String>()
+        for(line in responseStr){
+            if(line == "")
+                continue
+            split_response.add(line.trimStart().trimEnd())
+        }
+        responseMap.add(mapOf(metaStr to mapOf(split_response[0] to split_response[1])))
+    }
+    println("RESPONSE MAP")
+    responseMap.forEach{
+        for (entry in it) {
+            println(entry.key)
+            println(entry.value.toString())
+        }
     }
     return responseMap
 }
@@ -177,7 +205,7 @@ class LessonChatWrapper : ViewModel() {
             if (data != null) {
                 val serverMessages = data as List<Map<String, String>>
                 for(message in serverMessages) {
-                    var parsedMessage: Map<String, String>? = null
+                    var parsedMessage: List<Map<String, Map<String, String>>>? = null
                     if(message["type"] == "Input" && message["sender"] == "AI"){
                         parsedMessage = parseResponse(message["message"] as String)
                     }
@@ -222,17 +250,14 @@ class LessonChatWrapper : ViewModel() {
             try{
                 val response = GENERATIVE_MODEL.generateContent(*prompt.toTypedArray()).candidates[0].content.parts[0].asTextOrNull()
                 val message = response.toString().trimEnd()
-                println("the message in the line 225 is $message")
                 val responseMap = parseResponse(message)
                 _messages.add(MessageFormat(type="Input", sender=SenderType.AI, message=message, parsedMessage=responseMap))
                 updateDatabase()
             }catch (e: Exception){
-                val error_message = "damn, guess you finally found something I'm not good at, sorry I can't help you with that query, please create a new chat and let's continue learning"
-                _messages.add(MessageFormat(type="Input", sender=SenderType.AI, message=error_message, parsedMessage=mapOf("meta" to "Error")))
+                val error_message = "Looks like something went wrong! Please try again later"
+                _messages.add(MessageFormat(type="Input", sender=SenderType.AI, message=error_message, parsedMessage=listOf(mapOf("ERROR" to mapOf("Error" to error_message)))))
+                Log.e(BuildConfig.APPLICATION_ID, e.stackTraceToString())
             }
-
-
-
         }
     }
 
