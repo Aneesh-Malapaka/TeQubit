@@ -2,4 +2,34 @@
 <resources>
 
     <style name="Theme.TeQubit" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.TeQubit.LIght" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="colorPrimary">@color/purple_200</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorAccent">@color/teal_200</item>
+        <item name="android:actionBarStyle">@style/FirebaseAuthActionBarStyle.Light</item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
+
+        <item name="android:colorBackground">@color/white</item>
+    </style>
+    <style name="Theme.TeQubit.Dark" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="colorPrimary">@color/purple_200</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorAccent">@color/teal_200</item>
+        <item name="android:actionBarStyle">@style/FirebaseAuthActionBarStyle.Dark</item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
+
+        <item name="android:colorBackground">@color/app_dark</item>
+    </style>
+    <style name="FirebaseAuthActionBarStyle.Dark" parent="Widget.AppCompat.ActionBar">
+        <item name="android:background">@color/app_dark</item>
+    </style>
+    <style name="FirebaseAuthActionBarStyle.Light" parent="Widget.AppCompat.ActionBar">
+        <item name="android:background">@color/white</item>
+    </style>
 </resources>

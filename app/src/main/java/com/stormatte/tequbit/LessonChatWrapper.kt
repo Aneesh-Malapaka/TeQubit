@@ -2,7 +2,6 @@ package com.stormatte.tequbit
 
 import android.util.Log
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -20,7 +19,6 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import org.json.JSONObject
 
 
 val GENERATIVE_MODEL = GenerativeModel(
@@ -56,19 +54,6 @@ val PROMPTS_RESPONSE_WAY = mapOf(
 
 val META_QUERY = """
     Sometimes, you can be greeted with additional meta queries. These include
-    -  <[QUIZ:<|>QUESTION: {question}]> query, which indicates that you need to quiz your students based on their previous chat.
-        - Your quiz is defined by four parameters: (difficulty_level, number_of_questions, scope, type)
-            - Difficulty level is on a score of 1 (being easiest) and 10 (being hardest)
-            - Number of questions is in range of (5, 30)
-            - Scope is one of (interview_based, exam_based)
-            - Type can be one of (multi_choice_question, multi_select_question, textual_answer_type). Multi choice is a single true from multiple questions type. Multi select is a multiple true from multiple questions type and text based requires textual responses
-        - You obtain these parameters by conversing with the user and then respond back to admin with the following response
-            - <[QUIZ:<|>{difficulty_level}<|>{number_of_questions}<|>{scope}<|>{type}}]>
-        - Following that, you display every question, once per response to a user, in the format of <[QUIZ_QUERY:<|>{question}]>
-        - You collect their response, score it and share it to admin in the following format
-            - <[QUIZ_SCORE:<|>{score}]>
-        - At the end, you send a meta response back to admin in the format
-            - <[QUIZ]>
     - <[LESSON]> query, where you carefully break down the concept asked by a student into four different parts
         - Your lesson is defined by a single textual parameter, which is the question asked by a user
         - You then respond back to admin with the following:
@@ -109,9 +94,9 @@ fun get_prompt(preferences: UserPreferences): String{
 
 fun parseResponse(response: String): List<Map<String, Map<String, String>>>{
     println("RESPONSE: $response")
-    var responseSplit = response.split("<[")
-    println("RESPONSE " + responseSplit)
-    var responseMap = mutableListOf<Map<String, Map<String, String>>>()
+    val responseSplit = response.split("<[")
+    println("RESPONSE $responseSplit")
+    val responseMap = mutableListOf<Map<String, Map<String, String>>>()
     for(split in responseSplit){
         if(!split.contains(":")){
             continue
@@ -182,6 +167,7 @@ class LessonChatWrapper : ViewModel() {
         isChatInitialized = false
     }
 
+    @Suppress("UNCHECKED_CAST")
     private suspend fun userPreferences(): Pair<UserPreferences, String>{
         val userId = FirebaseAuth.getInstance().currentUser!!.uid
         val res = Firebase.database.getReference("users/$userId").get().await()
@@ -194,6 +180,7 @@ class LessonChatWrapper : ViewModel() {
         return Pair(preferences, prompt)
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun initializeChat() {
         if (isChatInitialized) return
         isChatInitialized = true
@@ -201,7 +188,7 @@ class LessonChatWrapper : ViewModel() {
         acceptNewMessages = false
         viewModelScope.launch {
             val userId = FirebaseAuth.getInstance().currentUser!!.uid
-            var data = Firebase.database.getReference("lessons/$userId/$chatID").get().await().value
+            val data = Firebase.database.getReference("lessons/$userId/$chatID").get().await().value
             if (data != null) {
                 val serverMessages = data as List<Map<String, String>>
                 for(message in serverMessages) {
@@ -218,12 +205,12 @@ class LessonChatWrapper : ViewModel() {
                         )
                     )
                 }
-                val (preferences, prompt) = userPreferences()
+                val (_, prompt) = userPreferences()
                 _messages[0].message = prompt
                 acceptNewMessages = true
             }
             else {
-                val (preferences, prompt) = userPreferences()
+                val (_, prompt) = userPreferences()
                 _messages.add(MessageFormat(type="Meta", sender=SenderType.USER, message=prompt, null))
                 acceptNewMessages = true
             }

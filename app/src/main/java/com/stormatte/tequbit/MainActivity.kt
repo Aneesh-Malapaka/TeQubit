@@ -3,7 +3,6 @@ package com.stormatte.tequbit
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -12,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -22,7 +20,6 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import com.google.gson.Gson
 import com.stormatte.tequbit.ui.theme.TeQubitTheme
 import kotlinx.coroutines.tasks.await
 
@@ -33,7 +30,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val viewModel:QubitViewModel = viewModel()
-            val gson = remember { Gson() }
             TeQubitTheme(
                 darkTheme = viewModel.darkTheme.value
             ) {
@@ -41,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    QubitNavigation(navController = navController,gson,viewModel)
+                    QubitNavigation(navController = navController,viewModel)
                 }
             }
         }
@@ -58,12 +54,12 @@ suspend fun userExistsAndSelectedPreferences(): Pair<Boolean, Boolean>{
 @SuppressLint("RestrictedApi")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun QubitNavigation(navController: NavHostController,gson: Gson,viewModel: QubitViewModel){
+fun QubitNavigation(navController: NavHostController,viewModel: QubitViewModel){
     val chatViewModel :LessonChatWrapper = viewModel()
     NavHost(navController = navController, startDestination = "initialization" +
             "") {
         composable(route="user_login"){
-            UserLogin{
+            UserLogin(viewModel){
                 navController.navigate("initialization"){
                     popUpTo(navController.graph.id)
                 }

@@ -9,4 +9,5 @@
     <color name="white">#EDE4E4</color>
     <color name="whitePure">#FFF</color>
     <color name="bgSettings">#F7555571</color>
+    <color name="app_dark">#FF282a3a</color>
 </resources>
