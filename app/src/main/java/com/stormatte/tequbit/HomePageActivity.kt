@@ -62,11 +62,9 @@ import kotlinx.coroutines.withContext
 fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit, viewModel: QubitViewModel){
 
   val darkTheme = viewModel.darkTheme.value
-  val caro_images = listOf(R.drawable.carousel_slide_1,R.drawable.entry_level,R.drawable.learningnewthings)
+  val caro_images = listOf(R.drawable.homecarousel1,R.drawable.homecarousel2)
   val pagerState = rememberPagerState(pageCount= { caro_images.size })
-  val pagerSize = remember {
-    mutableStateListOf(0,0)
-  }
+
   Box(
     modifier = Modifier.fillMaxSize(),
     contentAlignment = Alignment.TopStart
@@ -161,8 +159,9 @@ fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit, viewM
       
       HorizontalPager(
         state = pagerState,
-        contentPadding = PaddingValues(10.dp),
+//        contentPadding = PaddingValues(10.dp),
         pageSize = PageSize.Fill,
+        pageSpacing = 20.dp,
         modifier = Modifier
           .fillMaxHeight(0.5f)
          ){

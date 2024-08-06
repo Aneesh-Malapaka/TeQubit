@@ -128,7 +128,7 @@ fun parseResponse(response: String): List<Map<String, Map<String, String>>>{
         val metaStrPos = parsedSplit.indexOf(":")
         val metaStr = parsedSplit.substring(0, metaStrPos)
         val responseStr = parsedSplit.substring(metaStrPos + 1).split("<|>")
-        var split_response = mutableListOf<String>()
+        val split_response = mutableListOf<String>()
         for(line in responseStr){
             if(line == "")
                 continue
@@ -188,7 +188,7 @@ class LessonChatWrapper : ViewModel() {
         val data = res.value as Map<String, *>?
         val preferences = UserPreferences(
             knowledge = data!!["knowledge"] as String,
-            usage = data["usage"] as List<String>,
+//            usage = data["usage"] as List<String>,
             responseWay = data["responseWay"] as List<String>)
         val prompt = get_prompt(preferences)
         return Pair(preferences, prompt)

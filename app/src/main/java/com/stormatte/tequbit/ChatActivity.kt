@@ -1,7 +1,10 @@
 package com.stormatte.tequbit
 
 import android.util.Log
+import android.view.View
+import android.widget.TextView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -36,13 +39,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import com.google.gson.Gson
 import com.stormatte.tequbit.ui.theme.DarkIconsText
 import com.stormatte.tequbit.ui.theme.LightIconsText
+import io.noties.markwon.Markwon
 
 
 // use it for viewModel, (stackoverflow - https://stackoverflow.com/questions/72541475/how-to-add-more-items-to-a-static-list-in-jetpack-compose)
@@ -111,7 +118,7 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String,navController: Nav
                     contentDescription = "Settings Icon",
                     modifier = Modifier
                         .clickable {
-
+                            navController.navigate("settings")
                         }
                         .width(35.dp)
                         .height(35.dp)
@@ -133,14 +140,16 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String,navController: Nav
                                 index = message,
                                 senderType = chatViewModel.messages[message].sender,
                                 parsedMessage = chatViewModel.messages[message].parsedMessage!!,
-                                navController
+                                navController,
+                                darkTheme
                             )
                         } else {
                             MessageDisplay(
                                 index = message,
                                 senderType = chatViewModel.messages[message].sender,
                                 chat = chatViewModel.messages[message].message,
-                                navController
+                                navController,
+                                darkTheme = darkTheme
                             )
 
                         }
@@ -222,7 +231,7 @@ fun LessonChat(chatViewModel: LessonChatWrapper,chatID:String,navController: Nav
     }
 }
 @Composable
-fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: List<Map<String, Map<String, String>>>,navController: NavHostController){
+fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: List<Map<String, Map<String, String>>>,navController: NavHostController, darkTheme: Boolean){
     var chat = ""
     var meta = ""
 
@@ -245,6 +254,7 @@ fun MessageDisplay(index: Int, senderType: Enum<SenderType>, parsedMessage: List
         navController = navController,
         metaType = meta,
         lesson = parsedMessage,
+        darkTheme
     )
 }
 
@@ -255,10 +265,11 @@ fun MessageDisplay(
     chat: String,
     navController: NavHostController,
     metaType:String="",
-    lesson:List<Map<String, Map<String,String>>> = mutableListOf()
+    lesson:List<Map<String, Map<String,String>>> = mutableListOf(),
+    darkTheme: Boolean
 ){
-
-    val gson = remember { Gson() }
+    val context = LocalContext.current
+    val markwon = remember { Markwon.create(context) }
     val isSenderAI: Boolean = senderType == SenderType.AI
     val color1 = Color(0xD296C218)
     val color2 = Color(0xD218C21B)
@@ -301,7 +312,7 @@ fun MessageDisplay(
                     .width(20.dp)
                     .height(20.dp),
 
-                color = if (isSystemInDarkTheme()) {
+                color = if (darkTheme) {
                     Color.White
                 } else {
                     Color.Black
@@ -310,21 +321,22 @@ fun MessageDisplay(
             )
             Spacer(modifier = Modifier.width(0.dp))
             Column {
-                Text(
-                    text = chat,
-                    modifier = Modifier
-                        .width(250.dp)
-//                        .wrapContentWidth()
-                        .padding(start = 20.dp, top = 6.dp),
-                    fontSize = 17.sp,
-                    color = if (isSystemInDarkTheme()) {
-                        Color.White
-                    } else {
-                        Color.Black
-                    },
-                    textAlign = TextAlign.Justify,
-                    lineHeight = 30.sp
-                )
+//                Text(
+//                    text = chat,
+//                    modifier = Modifier
+//                        .width(250.dp)
+////                        .wrapContentWidth()
+//                        .padding(start = 20.dp, top = 6.dp),
+//                    fontSize = 17.sp,
+//                    color = if (isSystemInDarkTheme()) {
+//                        Color.White
+//                    } else {
+//                        Color.Black
+//                    },
+//                    textAlign = TextAlign.Justify,
+//                    lineHeight = 30.sp
+//                )
+                MarkdownTextChat(markdown = chat, markwon = markwon, darkTheme = darkTheme)
                 if(metaType=="LESSON")
                 Column {
                     ElevatedButton(onClick = {
@@ -350,9 +362,9 @@ fun MessageDisplay(
                     modifier = Modifier
                         .width(250.dp)
                         .wrapContentWidth(Alignment.End)
-                        .padding(start = 30.dp),
+                        .padding(start = 30.dp, top = 0.dp),
                     fontSize = 17.sp,
-                    color = if (isSystemInDarkTheme()) {
+                    color = if (darkTheme) {
                         Color.White
                     } else {
                         Color.Black
@@ -378,7 +390,7 @@ fun MessageDisplay(
                     .width(20.dp)
                     .height(20.dp),
 
-                color = if (isSystemInDarkTheme()) {
+                color = if (darkTheme) {
                     Color.White
                 } else {
                     Color.Black
@@ -410,4 +422,28 @@ fun Modifier.conditional(
     } else {
         this
     }
+}
+
+//creating a seperate Markdown for chat window because of the different styling of lesson and chat
+@Composable
+fun MarkdownTextChat(markdown: String, modifier: Modifier = Modifier, markwon: Markwon, darkTheme:Boolean) {
+
+    AndroidView(
+        factory = { context ->
+            TextView(context).apply {
+                textSize = 17f // in SP
+                if(darkTheme){
+                    setTextColor(ContextCompat.getColor(context,R.color.whitePure))
+                }
+                setLineSpacing(5.2f,1.3f)
+                textAlignment = View.TEXT_ALIGNMENT_GRAVITY
+                width = 250
+                setPadding(20,6, 20, 6)
+            }
+        },
+        update = { textView ->
+            markwon.setMarkdown(textView, markdown)
+        },
+        modifier = modifier.fillMaxWidth()
+    )
 }

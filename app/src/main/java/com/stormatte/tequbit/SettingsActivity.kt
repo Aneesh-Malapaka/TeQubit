@@ -1,5 +1,9 @@
 package com.stormatte.tequbit
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -34,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,7 +62,27 @@ import com.stormatte.tequbit.ui.theme.updatePreferenceIconColorLight
 fun SettingsScreen(navFromSettings: (destinationName:String) -> Unit, viewModel: QubitViewModel) {
     val displayName = FirebaseAuth.getInstance().currentUser?.displayName ?: "User"
     val userImage = FirebaseAuth.getInstance().currentUser?.photoUrl
+    val userInfo = FirebaseAuth.getInstance().currentUser
     val painter = rememberAsyncImagePainter(userImage)
+    val context = LocalContext.current
+//    println("UID: ${userInfo?.uid}")
+//    println("Email: ${userInfo?.email}")
+//    println("Display Name: ${userInfo?.displayName}")
+//    println("Phone Number: ${userInfo?.phoneNumber}")
+//    println("Photo URL: ${userInfo?.photoUrl}")
+//    println("Is Email Verified: ${userInfo?.isEmailVerified}")
+//
+//    // Iterate through provider data
+//    if (userInfo != null) {
+//        for (profile in userInfo.providerData) {
+//            println("Provider ID: ${profile.providerId}")
+//            println("UID: ${profile.uid}")
+//            println("Email: ${profile.email}")
+//            println("Display Name: ${profile.displayName}")
+//            println("Phone Number: ${profile.phoneNumber}")
+//            println("Photo URL: ${profile.photoUrl}")
+//        }
+//    }
     Column(
         modifier = Modifier
             .padding(20.dp)
@@ -108,7 +133,7 @@ fun SettingsScreen(navFromSettings: (destinationName:String) -> Unit, viewModel:
                 Spacer(modifier = Modifier.width(20.dp))
                 Column(
                     modifier = Modifier.clickable {
-                        navFromSettings("userDetails")
+//                        navFromSettings("userDetails")
                     }
                 ) {
                     Text(
@@ -117,16 +142,16 @@ fun SettingsScreen(navFromSettings: (destinationName:String) -> Unit, viewModel:
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(5.dp))
-                    Text(
-                        text = "View your details here",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if(viewModel.darkTheme.value){
-                            DarkSettingsHelpText
-                        }else{
-                            LightSettingsHelpText
-                        }
-                    )
+//                    Text(
+//                        text = "View your details here",
+//                        fontSize = 12.sp,
+//                        fontWeight = FontWeight.SemiBold,
+//                        color = if(viewModel.darkTheme.value){
+//                            DarkSettingsHelpText
+//                        }else{
+//                            LightSettingsHelpText
+//                        }
+//                    )
                 }
             }
         }
@@ -249,7 +274,11 @@ fun SettingsScreen(navFromSettings: (destinationName:String) -> Unit, viewModel:
                         tint = feedbackIconColor
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column {
+                    Column (
+                        modifier = Modifier.clickable {
+                            openEmailAppForFeedback(displayName,context)
+                        }
+                    ) {
                         Text(
                             text = "Leave a Feedback",
                             fontSize = 17.sp,
@@ -332,5 +361,24 @@ fun SettingsScreen(navFromSettings: (destinationName:String) -> Unit, viewModel:
                 )
             }
         }
+    }
+}
+
+fun openEmailAppForFeedback(displayName:String, context: Context){
+
+    //fallback intent in case of email app unavailability
+    val storeIntent = Intent(Intent.ACTION_VIEW)
+    storeIntent.setData(Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.gm"))
+    try {
+        val emailIntent = Intent(Intent.ACTION_SEND)
+//        emailIntent.setData(Uri.parse("mailto:stormatte.apps@gmail.com"))
+        //setting the subject auto
+        emailIntent.type = "text/plain"
+        emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf("stormatte.apps@gmail.com"))
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT,"TeQubit App Feedback From - $displayName")
+//        val packageManager = context.packageManager
+        context.startActivity(emailIntent)
+    } catch (e: ActivityNotFoundException) {
+        context.startActivity(storeIntent)
     }
 }

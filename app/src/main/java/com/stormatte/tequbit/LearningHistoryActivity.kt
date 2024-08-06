@@ -30,6 +30,7 @@ import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -98,7 +99,9 @@ fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit,view
                     imageVector = Icons.AutoMirrored.Sharp.KeyboardArrowLeft,
                     contentDescription = "Back to Home Icon",
                     modifier = Modifier
-                        .clickable { }
+                        .clickable {
+                           navToNext("home_screen", "")
+                        }
                         .width(35.dp)
                         .height(35.dp)
                 )
@@ -138,7 +141,15 @@ fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit,view
                 trailingIcon = {
                     Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Icon")
                 },
-                shape = RoundedCornerShape(26.dp)
+                colors = OutlinedTextFieldDefaults.colors(
+                  if(darkTheme) Color.White else Color.Black
+                ),
+                shape = RoundedCornerShape(26.dp),
+                placeholder = {
+                    Text(
+                        text = "Search your lessons here"
+                    )
+                },
             )
             Column(
                 modifier = Modifier.padding(top = 30.dp, bottom = 50.dp, start = 20.dp, end = 20.dp),
@@ -187,9 +198,13 @@ fun LearningHistory(navToNext: (destination:String, chatId: String) -> Unit,view
 @Composable
 fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (destination:String,chatId: String) -> Unit,darkThemeValue:Boolean){
 
-    val color1 = randomColor()
-    val color2 = randomColor()
+    //light colors
+    val color1 = Color(237, 161, 193)
+    val color2 = Color(215, 248, 247)
 
+    //darkColors
+    val color3 = Color(32,38,57)
+    val color4 = Color(63,76,119)
     ElevatedButton(
         modifier = Modifier
             .fillMaxWidth(),
@@ -203,19 +218,31 @@ fun LearningHistoryCard(index:Int,lesson: LearningHistoryItem, navToNext: (desti
         shape = RoundedCornerShape(20.dp)
     ) {
             Text(
-
                 text = "L${index+1}",
                 modifier = Modifier
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                color1,
-                                color2
+                    .conditional(darkThemeValue,
+                        ifTrue = {
+                            background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        color3,
+                                        color4
+                                    )
+                                ), shape = RoundedCornerShape(50.dp)
                             )
-                        ),
-                        shape = RoundedCornerShape(50.dp)
+                        },
+                        ifFalse = {
+                            background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        color1,
+                                        color2
+                                    )
+                                ), shape = RoundedCornerShape(50.dp)
+                            )
+                        }
                     )
-                    .padding(10.dp),
+                    .padding(15.dp),
                 color = if(darkThemeValue){
                     Color.White
                 }else{

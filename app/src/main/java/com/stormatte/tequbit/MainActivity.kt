@@ -118,7 +118,8 @@ fun QubitNavigation(navController: NavHostController,gson: Gson,viewModel: Qubit
                 run{
                     if(destination=="settings"){
                         navController.navigate("settings")
-                    }else {
+                    } else if (destination=="home_screen") navController.navigate("home_screen")
+                    else {
                         navController.currentBackStackEntry?.savedStateHandle?.set("ChatID", chatId)
                         navController.navigate("new_chat")
                     }

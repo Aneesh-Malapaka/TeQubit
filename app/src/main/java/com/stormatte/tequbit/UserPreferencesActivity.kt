@@ -119,47 +119,47 @@ fun UserPreference(navToHomePage: () -> Unit, viewModel: QubitViewModel) {
             }
 
         }
-        Column {
-            Text(
-                modifier = Modifier
-                    .padding(vertical = 20.dp, horizontal = 10.dp)
-                    .fillMaxWidth(),
-                text = "Select your primary usage",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
-            )
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.height(400.dp)
-            ) {
-                items(usageData.size) { index ->
-                    val usageItem = usageData[index]
-                    MultipleChoiceCard(
-                        usage = usageItem.usage,
-                        onCardSelected = {
-                            if (selectedUsages.contains(it)) {
-                                selectedUsages.removeAll(listOf(it))
-                            } else {
-                                selectedUsages.add(it)
-                            }
-
-                            if (preferenceSelected[1].selected) {
-                                preferenceSelected[1].selected = false
-                            } else {
-                                preferenceSelected[1].selected = true
-                                preferenceSelected[1].preferenceType = "Usage"
-                            }
-                            println("The items are ${selectedUsages.toList()}")
-                            isChecked = !isChecked
-                        },
-                        imageSrc = usageItem.image,
-                        isSelected = isChecked
-                    )
-                }
-            }
-        }
+//        Column {
+//            Text(
+//                modifier = Modifier
+//                    .padding(vertical = 20.dp, horizontal = 10.dp)
+//                    .fillMaxWidth(),
+//                text = "Select your primary usage",
+//                fontSize = 20.sp,
+//                fontWeight = FontWeight.ExtraBold,
+//            )
+//
+//            LazyVerticalGrid(
+//                columns = GridCells.Fixed(2),
+//                contentPadding = PaddingValues(0.dp),
+//                modifier = Modifier.height(400.dp)
+//            ) {
+//                items(usageData.size) { index ->
+//                    val usageItem = usageData[index]
+//                    MultipleChoiceCard(
+//                        usage = usageItem.usage,
+//                        onCardSelected = {
+//                            if (selectedUsages.contains(it)) {
+//                                selectedUsages.removeAll(listOf(it))
+//                            } else {
+//                                selectedUsages.add(it)
+//                            }
+//
+//                            if (preferenceSelected[1].selected) {
+//                                preferenceSelected[1].selected = false
+//                            } else {
+//                                preferenceSelected[1].selected = true
+//                                preferenceSelected[1].preferenceType = "Usage"
+//                            }
+//                            println("The items are ${selectedUsages.toList()}")
+//                            isChecked = !isChecked
+//                        },
+//                        imageSrc = usageItem.image,
+//                        isSelected = isChecked
+//                    )
+//                }
+//            }
+//        }
         Column {
 
             Text(
@@ -205,10 +205,10 @@ fun UserPreference(navToHomePage: () -> Unit, viewModel: QubitViewModel) {
         ElevatedButton(
             modifier = Modifier.padding(20.dp),
             onClick = {
-                if (knowledgePreference.value.isNotEmpty() && selectedUsages.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
+                if (knowledgePreference.value.isNotEmpty() && selectedResponseWays.isNotEmpty()) {
                     onSelectedPreferences(
                         knowledgePreference.value,
-                        selectedUsages.toList(),
+//                        selectedUsages.toList(),
                         selectedResponseWays.toList()
                     )
                     navToHomePage()
@@ -237,13 +237,13 @@ fun UserPreference(navToHomePage: () -> Unit, viewModel: QubitViewModel) {
 
 fun onSelectedPreferences(
     knowledgePreference: String,
-    usage: List<String>,
+//    usage: List<String>,
     responseWay: List<String>
 ) {
     val userId = FirebaseAuth.getInstance().currentUser!!.uid
     val userPreferences = UserPreferences(
         knowledge = knowledgePreference,
-        usage = usage,
+//        usage = usage,
         responseWay = responseWay
     )
     Firebase.database.getReference("users/$userId").setValue(userPreferences)
@@ -359,7 +359,7 @@ fun MultipleChoiceCard(
 
 data class UserPreferences(
     val knowledge: String,
-    val usage: List<String>,
+//    val usage: List<String>,
     val responseWay: List<String>,
 
     )

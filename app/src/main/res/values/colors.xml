@@ -7,5 +7,6 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#40000000</color>
     <color name="white">#EDE4E4</color>
+    <color name="whitePure">#FFF</color>
     <color name="bgSettings">#F7555571</color>
 </resources>
