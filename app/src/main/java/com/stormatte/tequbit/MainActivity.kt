@@ -148,7 +148,7 @@ fun QubitNavigation(navController: NavHostController,viewModel: QubitViewModel){
         }
 
         composable("FAQ"){
-            FAQ_Screen()
+            FAQ_Screen(viewModel)
         }
     }
 }

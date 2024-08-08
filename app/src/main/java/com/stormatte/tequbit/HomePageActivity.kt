@@ -159,9 +159,9 @@ fun HomePage(navToNextScreen:(destinationName:String,chatID:String)->Unit, viewM
       
       HorizontalPager(
         state = pagerState,
-//        contentPadding = PaddingValues(10.dp),
+//        contentPadding = PaddingValues(14.dp),
         pageSize = PageSize.Fill,
-        pageSpacing = 20.dp,
+        pageSpacing = 10.dp,
         modifier = Modifier
           .fillMaxHeight(0.5f)
          ){

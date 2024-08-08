@@ -56,18 +56,18 @@ fun UserPreference(navToHomePage: () -> Unit, viewModel: QubitViewModel) {
     val scrollState = rememberScrollState()
 
     val knowledgeData = listOf(
-        KnowledgeLevel("Student", R.drawable.newstudentimage),
+        KnowledgeLevel("Student", R.drawable.student),
         KnowledgeLevel("Entry Level", R.drawable.entrylevel1),
         KnowledgeLevel("Professional", R.drawable.professional3),
         KnowledgeLevel("Self Learning", R.drawable.selflearnt_1),
     )
 
-    val usageData = listOf(
-        UsageInfo("Learning New Things", R.drawable.learningnewthings),
-        UsageInfo("Interview Preparation", R.drawable.learningnewthings),
-        UsageInfo("Doubts Clarification", R.drawable.doubts),
-        UsageInfo("Casual Topics Clarification", R.drawable.casualsearch),
-    )
+//    val usageData = listOf(
+//        UsageInfo("Learning New Things", R.drawable.learningnewthings),
+//        UsageInfo("Interview Preparation", R.drawable.learningnewthings),
+//        UsageInfo("Doubts Clarification", R.drawable.doubts),
+//        UsageInfo("Casual Topics Clarification", R.drawable.casualsearch),
+//    )
 
     val respondingData = listOf(
         ResponseWayInfo("Witty & Fun Sentences", R.drawable.witty1),
