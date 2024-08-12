@@ -46,9 +46,9 @@ fun UserLogin(viewModel: QubitViewModel, navToNext: () -> Unit) {
         AuthUI.IdpConfig.EmailBuilder().build(),
         AuthUI.IdpConfig.GoogleBuilder().build(),
     )
-    var theme = R.style.Theme_TeQubit_Light
-    if (viewModel.darkTheme.value)
-        theme = R.style.Theme_TeQubit_Dark
+    val theme = R.style.FirebaseUI
+//    if (viewModel.darkTheme.value)
+//        theme = R.style.Theme_TeQubit_Dark
 
     val signInIntent = AuthUI.getInstance()
         .createSignInIntentBuilder()

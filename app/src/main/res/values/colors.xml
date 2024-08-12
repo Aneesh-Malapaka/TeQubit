@@ -9,5 +9,17 @@
     <color name="white">#EDE4E4</color>
     <color name="whitePure">#FFF</color>
     <color name="bgSettings">#F7555571</color>
-    <color name="app_dark">#FF282a3a</color>
+    <color name="app_dark">#FF282A3A</color>
+    <color name="primary_color">#9C71D9</color>
+    <color name="primary_dark_color">#FF3700B3</color>
+    <color name="accent_color">#FF03DAC5</color>
+    <color name="control_normal_color">#FF000000</color>
+    <color name="control_activated_color">#FF03DAC5</color>
+    <color name="button_normal_color">#7E5BB1</color>
+    <color name="control_highlight_color">#FF6200EE</color>
+    <color name="text_primary_color">#FF000000</color>
+    <color name="text_secondary_color">#000000</color>
+    <color name="hint_text_color">#050505</color>
+    <color name="text_color">#FF000000</color>
+    <color name="button_text_color">#FFFFFFFF</color>
 </resources>

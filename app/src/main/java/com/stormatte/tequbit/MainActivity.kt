@@ -56,7 +56,7 @@ suspend fun userExistsAndSelectedPreferences(): Pair<Boolean, Boolean>{
 @Composable
 fun QubitNavigation(navController: NavHostController,viewModel: QubitViewModel){
     val chatViewModel :LessonChatWrapper = viewModel()
-    NavHost(navController = navController, startDestination = "initialization" +
+    NavHost(navController = navController, startDestination = "user_login" +
             "") {
         composable(route="user_login"){
             UserLogin(viewModel){
